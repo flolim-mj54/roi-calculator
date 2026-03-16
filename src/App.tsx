@@ -116,7 +116,7 @@ export default function App() {
   const costPercent = oldCost > 0 ? (smartCost / oldCost) * 100 : 0;
 
   return (
-    <div className={`min-h-screen font-['Pretendard',sans-serif] pb-20 print:pb-0 selection:bg-teal-500 selection:text-white print:m-0 print:p-0 bg-[#020617] print:bg-white`}>
+    <div className={`min-h-screen font-['Pretendard',sans-serif] pb-24 print:pb-0 selection:bg-teal-500 selection:text-white print:m-0 print:p-0 bg-[#020617] print:bg-white`}>
       
       <style>
         {`
@@ -128,25 +128,33 @@ export default function App() {
         `}
       </style>
 
-      {/* 시연 모드: 플로팅 버튼 */}
-      {isPreviewMode && (
-        <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 flex flex-col md:flex-row gap-3 print:hidden animate-fade-in">
-          <button 
-            onClick={() => setIsPreviewMode(false)}
-            className="bg-blue-700/90 hover:bg-blue-600 backdrop-blur-md text-white px-5 py-3 rounded-full font-bold text-sm flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(30,58,138,0.5)] border border-blue-600 transition-all"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path></svg>
-            대시보드로 복귀
-          </button>
-          <button 
-            onClick={() => window.print()}
-            className="bg-slate-200/90 hover:bg-white backdrop-blur-md text-slate-900 px-5 py-3 rounded-full font-bold text-sm flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-slate-300 transition-all"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-            인쇄 / PDF 저장
-          </button>
-        </div>
-      )}
+      {/* 우측 하단 고정 플로팅 버튼 (대시보드 & 시연 모드 공통) */}
+      <div className="fixed bottom-5 right-5 md:bottom-8 md:right-8 z-50 flex flex-col-reverse sm:flex-row items-end gap-3 print:hidden animate-fade-in">
+        <button 
+          onClick={() => window.print()}
+          className="bg-slate-200/90 hover:bg-white backdrop-blur-md text-slate-900 px-5 py-3 rounded-full font-bold text-sm flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-slate-300 transition-all whitespace-nowrap"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+          {isPreviewMode ? '인쇄 / PDF 저장' : '제안서 인쇄 / PDF 저장'}
+        </button>
+
+        <button 
+          onClick={() => setIsPreviewMode(!isPreviewMode)}
+          className="bg-blue-600/90 hover:bg-blue-500 backdrop-blur-md text-white px-6 py-3 rounded-full font-black text-sm flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(37,99,235,0.5)] border border-blue-500 transition-all whitespace-nowrap"
+        >
+          {isPreviewMode ? (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path></svg>
+              대시보드로 복귀
+            </>
+          ) : (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+              고객 시연 화면으로 띄우기
+            </>
+          )}
+        </button>
+      </div>
 
       {/* ===================== 상단: 대시보드 ===================== */}
       {!isPreviewMode && (
@@ -159,26 +167,26 @@ export default function App() {
           <div className="container mx-auto px-4 max-w-5xl mt-6 space-y-5 mb-10">
             <div className="bg-[#050b14] p-5 rounded-2xl border border-slate-700 flex flex-col md:flex-row gap-6 shadow-lg">
               <div className="flex-1 w-full overflow-hidden">
-                <h2 className="text-white font-bold mb-3 flex items-center gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-blue-700"></span>조명 구성 추가</h2>
+                <h2 className="text-white font-bold mb-3 flex items-center gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>조명 구성 추가</h2>
                 <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50 mb-3">
                   <div className="grid grid-cols-3 gap-3 mb-3">
                     <div className="col-span-3">
                       <label className="text-[11px] text-slate-400 mb-1 block">조명 종류</label>
-                      <select value={formType} onChange={handleTypeChange} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-700 outline-none">
+                      <select value={formType} onChange={handleTypeChange} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none">
                         {LIGHT_PRESETS.map((p, i) => <option key={i} value={p.name}>{p.name}</option>)}
                       </select>
                     </div>
                     <div><label className="text-[11px] text-slate-400 mb-1 block">기존 조명</label>
-                      <div className="relative"><input type="number" value={formOldW} onChange={(e)=>setFormOldW(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white pr-7 focus:border-blue-700 outline-none" /><span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">W</span></div>
+                      <div className="relative"><input type="number" value={formOldW} onChange={(e)=>setFormOldW(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white pr-7 focus:border-blue-500 outline-none" /><span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">W</span></div>
                     </div>
                     <div><label className="text-[11px] text-teal-400 font-bold mb-1 block">신규 LED</label>
                       <div className="relative"><input type="number" value={formNewW} onChange={(e)=>setFormNewW(e.target.value)} className="w-full bg-teal-500/10 border border-teal-500/30 rounded-lg px-3 py-2 text-sm text-teal-400 font-bold pr-7 focus:border-teal-500 outline-none" /><span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-teal-400/70 text-xs font-bold">W</span></div>
                     </div>
                     <div><label className="text-[11px] text-slate-400 mb-1 block">수량</label>
-                      <div className="relative"><input type="number" value={formQty} onChange={(e)=>setFormQty(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white pr-7 focus:border-blue-700 outline-none" /><span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">구</span></div>
+                      <div className="relative"><input type="number" value={formQty} onChange={(e)=>setFormQty(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white pr-7 focus:border-blue-500 outline-none" /><span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">구</span></div>
                     </div>
                   </div>
-                  <button onClick={handleAddLight} className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-2 rounded-lg text-sm transition-colors">리스트에 추가하기</button>
+                  <button onClick={handleAddLight} className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 rounded-lg text-sm transition-colors">리스트에 추가하기</button>
                 </div>
                 
                 {lights.length > 0 && (
@@ -208,7 +216,7 @@ export default function App() {
               </div>
 
               <div className="flex-1 border-t md:border-t-0 md:border-l border-slate-800 pt-5 md:pt-0 md:pl-6">
-                <h2 className="text-white font-bold mb-3 flex items-center gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-blue-700"></span>현장 및 제어 설정</h2>
+                <h2 className="text-white font-bold mb-3 flex items-center gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>현장 및 제어 설정</h2>
                 
                 <div className="mb-4">
                   <label className="text-[11px] text-slate-400 mb-1 block">대상 현장명 (고객사명)</label>
@@ -217,24 +225,24 @@ export default function App() {
                     value={siteName} 
                     onChange={(e)=>setSiteName(e.target.value)} 
                     placeholder="예: OOOO 물류센터, OOO빌딩 등" 
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-700 outline-none placeholder:text-slate-600" 
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none placeholder:text-slate-600" 
                   />
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div><label className="text-[11px] text-slate-500 mb-1 block whitespace-nowrap">일 점등(h)</label><input type="number" value={hours} onChange={(e)=>setHours(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-700 outline-none" /></div>
-                  <div><label className="text-[11px] text-slate-500 mb-1 block whitespace-nowrap">연 가동(d)</label><input type="number" value={days} onChange={(e)=>setDays(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-700 outline-none" /></div>
-                  <div><label className="text-[11px] text-slate-500 mb-1 block whitespace-nowrap">단가(원)</label><input type="number" value={rate} onChange={(e)=>setRate(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-700 outline-none" /></div>
+                  <div><label className="text-[11px] text-slate-500 mb-1 block whitespace-nowrap">일 점등(h)</label><input type="number" value={hours} onChange={(e)=>setHours(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" /></div>
+                  <div><label className="text-[11px] text-slate-500 mb-1 block whitespace-nowrap">연 가동(d)</label><input type="number" value={days} onChange={(e)=>setDays(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" /></div>
+                  <div><label className="text-[11px] text-slate-500 mb-1 block whitespace-nowrap">단가(원)</label><input type="number" value={rate} onChange={(e)=>setRate(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" /></div>
                 </div>
                 <div>
                   <div className="flex justify-between text-xs mb-1"><span className="text-slate-400 whitespace-nowrap">디밍 절감률</span><span className="text-teal-400 font-bold">{dimmingRate}%</span></div>
-                  <input type="range" min="0" max="100" step="1" value={dimmingRate} onChange={(e) => setDimmingRate(Number(e.target.value))} className="w-full accent-blue-700 h-2 bg-slate-800 rounded-lg cursor-pointer" />
+                  <input type="range" min="0" max="100" step="1" value={dimmingRate} onChange={(e) => setDimmingRate(Number(e.target.value))} className="w-full accent-blue-500 h-2 bg-slate-800 rounded-lg cursor-pointer" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-800/50 p-5 rounded-2xl border-2 border-dashed border-slate-600">
-              <h2 className="text-white font-bold mb-3 flex items-center gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-teal-400"></span>협력사 견적 합산 (내부 원가)</h2>
+            <div className="bg-slate-800/50 p-5 rounded-2xl border-2 border-dashed border-slate-600 mb-12">
+              <h2 className="text-white font-bold mb-3 flex items-center gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>협력사 견적 합산 (내부 원가)</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                 {[
                   { label: 'A사 견적 (예: 자재)', val: quoteA, setter: setQuoteA },
@@ -242,25 +250,14 @@ export default function App() {
                   { label: 'C사 견적 (예: 시공)', val: quoteC, setter: setQuoteC }
                 ].map((q, i) => (
                   <div key={i}><label className="text-[11px] text-slate-400 mb-1 block whitespace-nowrap">{q.label}</label>
-                    <div className="relative"><input type="text" value={q.val} onChange={handleNumChange(q.setter)} placeholder="0" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-right font-bold pr-8 focus:border-blue-700 outline-none" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">원</span></div>
+                    <div className="relative"><input type="text" value={q.val} onChange={handleNumChange(q.setter)} placeholder="0" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-right font-bold pr-8 focus:border-blue-500 outline-none" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">원</span></div>
                   </div>
                 ))}
               </div>
               <div className="flex justify-end items-baseline gap-3 pt-3 border-t border-slate-700">
                 <span className="text-slate-400 text-xs whitespace-nowrap">총 사업비 합산 :</span>
-                <span className="text-xl font-black text-teal-400 whitespace-nowrap">{formatNum(totalCost)} 원</span>
+                <span className="text-xl font-black text-slate-300 whitespace-nowrap">{formatNum(totalCost)} 원</span>
               </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4 pb-12 border-b-4 border-slate-800 border-dashed">
-              <button onClick={() => setIsPreviewMode(true)} className="flex items-center justify-center gap-2 bg-blue-700/20 hover:bg-blue-700 text-blue-400 hover:text-white border border-blue-700 font-black px-6 py-3 rounded-xl transition-all text-sm md:text-base whitespace-nowrap shadow-lg">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                고객 시연 화면으로 띄우기
-              </button>
-              <button onClick={() => window.print()} className="flex items-center justify-center gap-2 bg-slate-200 hover:bg-white text-slate-900 font-black px-6 py-3 rounded-xl shadow-lg transition-colors text-sm md:text-base whitespace-nowrap">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                제안서 인쇄 / PDF 저장
-              </button>
             </div>
           </div>
         </div>
@@ -300,19 +297,18 @@ export default function App() {
 
           <div className={`px-5 sm:px-8 lg:px-12 pb-10 lg:pb-12 print:px-8 print:pb-6 print:pt-0 ${isPreviewMode ? 'pt-2 lg:pt-4' : ''}`}>
             
-            {/* 1. 핵심 지표 */}
+            {/* 1. 핵심 지표 영역 */}
             <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8 print:gap-3 print:mb-4">
               
-              <div className="bg-slate-800 print:bg-orange-50 border-2 border-slate-700 print:border-orange-200 rounded-2xl lg:rounded-3xl print:rounded-xl p-5 lg:p-8 print:p-4 shadow-sm flex flex-col justify-center print:text-center relative">
-                <div className="absolute top-5 right-5 lg:top-8 lg:right-8 print:hidden bg-teal-500/10 p-2 rounded-full">
-                  <svg className="w-5 h-5 lg:w-6 lg:h-6 text-teal-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                </div>
-                <p className="text-slate-400 print:text-slate-500 text-[11px] lg:text-base print:text-[11px] font-bold mb-1 lg:mb-2 print:mb-0.5 break-keep whitespace-nowrap">총 투자 사업비</p>
-                <p className="text-3xl lg:text-5xl print:text-2xl font-black text-teal-400 print:text-orange-700 tracking-tight break-keep whitespace-nowrap">
-                  <CountUp value={totalCost} animate={isPreviewMode} isCurrency={true} /> <span className="text-base lg:text-xl print:text-sm font-bold text-teal-500/70 print:text-orange-700/80">원</span>
+              {/* 총 투자 사업비 (차분한 회색톤) */}
+              <div className="bg-slate-800/40 print:bg-slate-50 border border-slate-700/50 print:border-slate-200 rounded-2xl lg:rounded-3xl print:rounded-xl p-5 lg:p-8 print:p-4 flex flex-col justify-center print:text-center relative">
+                <p className="text-slate-500 print:text-slate-400 text-[11px] lg:text-sm print:text-[11px] font-bold mb-1 lg:mb-2 print:mb-0.5 break-keep whitespace-nowrap">총 투자 사업비</p>
+                <p className="text-2xl lg:text-4xl print:text-xl font-bold text-slate-300 print:text-slate-600 tracking-tight break-keep whitespace-nowrap">
+                  <CountUp value={totalCost} animate={isPreviewMode} isCurrency={true} /> <span className="text-sm lg:text-lg print:text-xs font-medium text-slate-500">원</span>
                 </p>
               </div>
 
+              {/* 연간 전기요금 예상 절감액 (청록색 강조) */}
               <div className="bg-teal-900/10 print:bg-orange-50 border-2 border-teal-500/30 print:border-orange-300 rounded-2xl lg:rounded-3xl print:rounded-xl p-5 lg:p-8 print:p-4 shadow-sm flex flex-col justify-center relative overflow-hidden print:text-center">
                 <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-teal-500/10 print:hidden rounded-full blur-3xl"></div>
                 <div className="absolute top-5 right-5 lg:top-8 lg:right-8 print:hidden bg-teal-500/20 p-2 rounded-full z-10">
@@ -332,27 +328,29 @@ export default function App() {
               </div>
             </div>
 
-            {/* 2. ROI & 회수 기간 */}
+            {/* 2. ROI & 회수 기간 영역 */}
             <div className="bg-slate-900 print:bg-blue-50/50 border border-slate-800 print:border-blue-200 text-white print:text-slate-800 rounded-2xl lg:rounded-3xl print:rounded-xl p-6 lg:p-12 print:p-5 mb-6 lg:mb-12 print:mb-4 shadow-xl print:shadow-none">
               <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-6 lg:gap-10 print:gap-4 divide-y md:divide-y-0 print:divide-y-0 md:divide-x print:divide-x divide-slate-700 print:divide-blue-200">
-                <div className="text-center pt-2 md:pt-0 print:pt-0 relative">
-                  <div className="absolute top-0 right-0 print:hidden opacity-20">
-                    <svg className="w-10 h-10 lg:w-12 lg:h-12 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                  </div>
-                  <p className="text-slate-400 print:text-slate-500 text-[11px] lg:text-base print:text-[11px] font-bold tracking-widest mb-2 lg:mb-4 print:mb-1 break-keep whitespace-nowrap">예상 투자수익률 (ROI)</p>
-                  <p className="text-4xl lg:text-7xl print:text-3xl font-black text-blue-400 print:text-blue-800 drop-shadow-lg print:drop-shadow-none whitespace-nowrap relative z-10">
-                    {totalCost > 0 ? <CountUp value={roi} animate={isPreviewMode} decimals={1} /> : '0'} <span className="text-xl lg:text-3xl print:text-xl font-bold">%</span>
+                
+                {/* 💡 ROI 복구 (총 투자 사업비와 동일한 크기와 톤으로 설정) */}
+                <div className="text-center pt-2 md:pt-0 print:pt-0 relative flex flex-col justify-center">
+                  <p className="text-slate-400 print:text-slate-500 text-[11px] lg:text-sm print:text-[10px] font-bold tracking-widest mb-1 lg:mb-2 print:mb-1 break-keep whitespace-nowrap">예상 투자수익률 (ROI)</p>
+                  <p className="text-2xl lg:text-4xl print:text-xl font-bold text-slate-300 print:text-slate-600 whitespace-nowrap relative z-10">
+                    {totalCost > 0 ? <CountUp value={roi} animate={isPreviewMode} decimals={1} /> : '0'} <span className="text-sm lg:text-lg print:text-sm font-medium">%</span>
                   </p>
                 </div>
+
+                {/* 회수 기간 (블루 강조) */}
                 <div className="text-center pt-6 md:pt-0 print:pt-0 relative">
                   <div className="absolute top-6 md:top-0 right-0 print:hidden opacity-20">
                     <svg className="w-10 h-10 lg:w-12 lg:h-12 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   </div>
-                  <p className="text-slate-400 print:text-slate-500 text-[11px] lg:text-base print:text-[11px] font-bold tracking-widest mb-2 lg:mb-4 print:mb-1 break-keep whitespace-nowrap">투자금 전액 회수 기간</p>
-                  <p className="text-4xl lg:text-7xl print:text-3xl font-black text-blue-400 print:text-blue-800 drop-shadow-lg print:drop-shadow-none whitespace-nowrap relative z-10">
-                    {totalSave > 0 && totalCost > 0 ? <CountUp value={paybackYears} animate={isPreviewMode} decimals={1} /> : '0'} <span className="text-xl lg:text-3xl print:text-xl font-bold">년</span>
+                  <p className="text-slate-300 print:text-slate-600 text-[12px] lg:text-lg print:text-[12px] font-black tracking-widest mb-2 lg:mb-4 print:mb-1 break-keep whitespace-nowrap">투자금 전액 회수 기간</p>
+                  <p className="text-5xl lg:text-7xl print:text-4xl font-black text-blue-400 print:text-blue-800 drop-shadow-lg print:drop-shadow-none whitespace-nowrap relative z-10">
+                    {totalSave > 0 && totalCost > 0 ? <CountUp value={paybackYears} animate={isPreviewMode} decimals={1} /> : '0'} <span className="text-2xl lg:text-4xl print:text-2xl font-bold">년</span>
                   </p>
                 </div>
+
               </div>
             </div>
 
@@ -360,11 +358,9 @@ export default function App() {
             <div className="grid grid-cols-1 lg:grid-cols-2 print:grid-cols-2 gap-8 lg:gap-10 print:gap-6 print:mb-0">
               
               <div>
-                <h3 className="text-base lg:text-xl print:text-[13px] font-black border-l-[4px] lg:border-l-[5px] border-blue-700 print:border-blue-800 pl-3 lg:pl-4 print:pl-3 mb-3 lg:mb-5 print:mb-3 text-white print:text-slate-800 break-keep whitespace-nowrap">요금 절감 상세 비교</h3>
+                <h3 className="text-base lg:text-xl print:text-[13px] font-black border-l-[4px] lg:border-l-[5px] border-blue-500 print:border-blue-800 pl-3 lg:pl-4 print:pl-3 mb-3 lg:mb-5 print:mb-3 text-white print:text-slate-800 break-keep whitespace-nowrap">요금 절감 상세 비교</h3>
                 
                 <div className="space-y-3 lg:space-y-4 print:space-y-2">
-                  
-                  {/* 기존 요금 */}
                   <div className="bg-slate-800 print:bg-slate-100 p-4 lg:p-5 print:p-3 rounded-xl print:rounded-lg border border-slate-700 print:border-slate-300 shadow-sm print:shadow-none">
                     <div className="flex justify-between items-end mb-2 lg:mb-3 print:mb-1.5">
                       <span className="text-slate-400 print:text-slate-500 font-bold text-[11px] lg:text-sm print:text-[10px] break-keep whitespace-nowrap mb-1">개선 전 (기존 요금)</span>
@@ -376,21 +372,21 @@ export default function App() {
                     <div className="w-full bg-slate-600 print:bg-slate-300 h-1.5 lg:h-2 print:h-1.5 rounded-full"></div>
                   </div>
                   
-                  {/* 💡 "도입 후 절감 요금" -> "도입 후 (예상 요금)"으로 텍스트 명확화 */}
-                  <div className="bg-slate-800 print:bg-slate-50 border border-slate-700 print:border-slate-300 p-4 lg:p-5 print:p-3 rounded-xl print:rounded-lg shadow-sm print:shadow-none relative overflow-hidden">
+                  {/* 💡 강조: 도입 후 요금 (블루톤으로 시각적 차별화 및 강조) */}
+                  <div className="bg-blue-900/10 print:bg-blue-50 border-2 border-blue-500/40 print:border-blue-300 p-4 lg:p-5 print:p-3 rounded-xl print:rounded-lg shadow-sm print:shadow-none relative overflow-hidden">
                     <div className="flex justify-between items-end mb-2 lg:mb-3 print:mb-1.5">
-                      <span className="text-slate-300 print:text-slate-700 font-bold text-[11px] lg:text-sm print:text-[11px] break-keep whitespace-nowrap mb-1">도입 후 (예상 요금)</span>
+                      <span className="text-blue-400 print:text-blue-700 font-bold text-[11px] lg:text-sm print:text-[11px] break-keep whitespace-nowrap mb-1">도입 후 (예상 요금)</span>
                       <div className="text-right flex flex-col items-end gap-1 print:gap-0.5">
-                        <span className="text-lg lg:text-2xl print:text-sm font-black text-white print:text-slate-800 whitespace-nowrap leading-none"><CountUp value={smartCost} animate={isPreviewMode} isCurrency={true} /> 원</span>
-                        <span className="text-[10px] lg:text-xs print:text-[9px] text-slate-400 print:text-slate-500 font-medium">월 평균 <CountUp value={monthlySmartCost} animate={isPreviewMode} isCurrency={true} /> 원</span>
+                        <span className="text-lg lg:text-2xl print:text-sm font-black text-blue-400 print:text-blue-800 whitespace-nowrap leading-none"><CountUp value={smartCost} animate={isPreviewMode} isCurrency={true} /> 원</span>
+                        <span className="text-[10px] lg:text-xs print:text-[9px] text-blue-500 print:text-blue-600 font-medium">월 평균 <CountUp value={monthlySmartCost} animate={isPreviewMode} isCurrency={true} /> 원</span>
                       </div>
                     </div>
-                    <div className="w-full bg-slate-700 print:bg-slate-200 h-1.5 lg:h-2 print:h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-slate-500 print:bg-slate-400 h-full transition-all duration-[1500ms] ease-out" style={{ width: `${isPreviewMode ? costPercent : (oldCost > 0 ? costPercent : 0)}%` }}></div>
+                    <div className="w-full bg-slate-700 print:bg-blue-200 h-1.5 lg:h-2 print:h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-blue-500 print:bg-blue-600 h-full transition-all duration-[1500ms] ease-out" style={{ width: `${isPreviewMode ? costPercent : (oldCost > 0 ? costPercent : 0)}%` }}></div>
                     </div>
                   </div>
 
-                  {/* 💡 [결과] '실제 요금 절감액' 별도 박스로 완벽히 분리 강조! */}
+                  {/* 강력 강조: 순수 요금 절감액 (청록톤) */}
                   <div className="mt-3 lg:mt-4 print:mt-2 bg-teal-900/20 print:bg-orange-50 border-2 border-teal-500/30 print:border-orange-400 p-4 lg:p-5 print:p-3 rounded-xl print:rounded-lg relative overflow-hidden">
                     <div className="absolute left-0 top-0 bottom-0 w-1.5 lg:w-2 print:w-1.5 bg-teal-500 print:bg-orange-500"></div>
                     <div className="flex justify-between items-center pl-2 lg:pl-3 print:pl-2">
@@ -408,10 +404,16 @@ export default function App() {
 
                 </div>
                 
+                <div className="mt-4 print:mt-3 bg-slate-800/50 print:bg-slate-50 p-3 lg:p-4 print:p-2 rounded-lg lg:rounded-xl border border-slate-700 print:border-slate-300">
+                  <p className="text-[10px] lg:text-sm print:text-[9px] font-bold text-slate-300 print:text-slate-600 mb-1 whitespace-nowrap">※ 시뮬레이션 적용 기준</p>
+                  <p className="text-[10px] lg:text-xs print:text-[9px] text-slate-400 print:text-slate-500">
+                    전력 단가 <strong className="text-slate-300 print:text-slate-700">{rate}원/kWh</strong> | 운영 <strong className="text-slate-300 print:text-slate-700">{hours}h/365d</strong> | 스마트 디밍 <strong className="text-slate-300 print:text-slate-700">{dimmingRate}%</strong>
+                  </p>
+                </div>
               </div>
 
               <div className="flex flex-col h-full">
-                <h3 className="text-base lg:text-xl print:text-[13px] font-black border-l-[4px] lg:border-l-[5px] border-blue-700 print:border-blue-800 pl-3 lg:pl-4 print:pl-3 mb-3 lg:mb-5 print:mb-3 text-white print:text-slate-800 break-keep whitespace-nowrap">교체 대상 조명 내역</h3>
+                <h3 className="text-base lg:text-xl print:text-[13px] font-black border-l-[4px] lg:border-l-[5px] border-blue-500 print:border-blue-800 pl-3 lg:pl-4 print:pl-3 mb-3 lg:mb-5 print:mb-3 text-white print:text-slate-800 break-keep whitespace-nowrap">교체 대상 조명 내역</h3>
                 
                 <div className="bg-slate-800 print:bg-white border border-slate-700 print:border-slate-300 rounded-xl lg:rounded-2xl print:rounded-lg overflow-x-auto print:overflow-visible shadow-sm print:shadow-none flex-1">
                   <table className="w-full text-[11px] lg:text-sm print:text-[10px] text-left min-w-max print:text-center print:min-w-0">
