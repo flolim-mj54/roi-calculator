@@ -1,4 +1,5 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
+import { Document, Page, Text, View, StyleSheet, Font, pdf } from '@react-pdf/renderer';
 
 const LIGHT_PRESETS = [
   { name: '평판등 1285x320', defaultOld: 50, defaultNew: 25 },
@@ -17,8 +18,233 @@ interface LightItem {
   qty: number;
 }
 
+const formatNum = (num: number) => new Intl.NumberFormat('ko-KR').format(Math.round(num));
+
+Font.register({
+  family: 'Pretendard',
+  fonts: [
+    { src: 'https://cdn.jsdelivr.net/npm/@expo-google-fonts/noto-sans-kr@0.2.3/NotoSansKR_400Regular.ttf', fontWeight: 'normal' },
+    { src: 'https://cdn.jsdelivr.net/npm/@expo-google-fonts/noto-sans-kr@0.2.3/NotoSansKR_700Bold.ttf', fontWeight: 'bold' },
+    { src: 'https://cdn.jsdelivr.net/npm/@expo-google-fonts/noto-sans-kr@0.2.3/NotoSansKR_900Black.ttf', fontWeight: 'heavy' },
+  ]
+});
+
+const pdfStyles = StyleSheet.create({
+  page: { backgroundColor: '#ffffff', padding: '30px 40px 45px 40px', fontFamily: 'Pretendard' },
+  topBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 10, backgroundColor: '#1e293b' },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 10, backgroundColor: '#1e293b' },
+  
+  headerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid #cbd5e1', paddingBottom: 8, marginBottom: 8 },
+  brandTitle: { color: '#64748b', fontSize: 10, fontWeight: 'bold', marginBottom: 4 },
+  mainTitle: { color: '#0f172a', fontSize: 24, fontWeight: 'heavy' },
+  siteTag: { marginTop: 6, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: 6, alignSelf: 'flex-start' },
+  siteTagLabel: { color: '#475569', fontSize: 10, fontWeight: 'bold', marginRight: 6 },
+  siteTagValue: { color: '#0f172a', fontSize: 12, fontWeight: 'heavy' },
+  dateText: { color: '#64748b', fontSize: 10, fontWeight: 'bold' },
+  descText: { color: '#64748b', fontSize: 11, marginBottom: 8, lineHeight: 1.3 },
+  
+  sectionTitle: { fontSize: 13, fontWeight: 'heavy', color: '#1e293b', borderLeft: '4px solid #94a3b8', paddingLeft: 8, marginBottom: 6 },
+  
+  tableContainer: { border: '1px solid #cbd5e1', borderRadius: 10, overflow: 'hidden', marginBottom: 8 },
+  tableHeader: { flexDirection: 'row', backgroundColor: '#f1f5f9', borderBottom: '1px solid #cbd5e1', padding: '6px 0' },
+  tableRow: { flexDirection: 'row', borderBottom: '1px solid #e2e8f0', padding: '6px 0' },
+  tableFooter: { flexDirection: 'row', backgroundColor: '#f8fafc', borderTop: '1px solid #cbd5e1', padding: '6px 0' },
+  col1: { flex: 2, textAlign: 'center', fontSize: 10, color: '#475569', fontWeight: 'bold' },
+  col2: { flex: 1, textAlign: 'center', fontSize: 10, color: '#475569', fontWeight: 'bold' },
+  col3: { flex: 1.5, textAlign: 'center', fontSize: 10, color: '#d97706', fontWeight: 'bold' },
+  cell1: { flex: 2, textAlign: 'center', fontSize: 10, color: '#1e293b' },
+  cell2: { flex: 1, textAlign: 'center', fontSize: 10, color: '#1e293b', fontWeight: 'bold' },
+  cell3: { flex: 1.5, textAlign: 'center', fontSize: 10, color: '#64748b' },
+
+  giantBox: { flex: 1, flexDirection: 'column' },
+  
+  criteriaBoxFull: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 8, padding: '6px 0', marginBottom: 8 },
+  
+  splitRow: { flexDirection: 'row', gap: 12, flex: 1 },
+  col: { flex: 1, display: 'flex', flexDirection: 'column', gap: 6 },
+
+  cardLight: { flex: 1, flexDirection: 'column', justifyContent: 'space-between', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px' },
+  cardSlate: { flex: 1, flexDirection: 'column', justifyContent: 'space-between', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 8, padding: '10px 12px' },
+  cardYellow: { flex: 1, flexDirection: 'column', justifyContent: 'space-between', backgroundColor: '#fffbeb', border: '2px solid #fcd34d', borderRadius: 8, padding: '10px 12px' },
+
+  cardLabelLight: { alignSelf: 'flex-start', color: '#64748b', fontSize: 11, fontWeight: 'bold' },
+  cardLabelSlate: { alignSelf: 'flex-start', color: '#334155', fontSize: 11, fontWeight: 'bold' },
+  cardLabelYellow: { alignSelf: 'flex-start', color: '#b45309', fontSize: 12, fontWeight: 'heavy' },
+
+  valContainer: { alignSelf: 'flex-end', alignItems: 'flex-end', marginTop: 6 },
+  
+  valLight: { color: '#475569', fontSize: 18, fontWeight: 'heavy' },
+  valSlate: { color: '#0f172a', fontSize: 22, fontWeight: 'heavy' },
+  valYellow: { color: '#d97706', fontSize: 26, fontWeight: 'heavy' },
+  
+  unitLight: { color: '#475569', fontSize: 10, fontWeight: 'bold' },
+  unitSlate: { color: '#0f172a', fontSize: 11, fontWeight: 'bold' },
+  unitYellow: { color: '#d97706', fontSize: 12, fontWeight: 'heavy' },
+  
+  subLight: { color: '#64748b', fontSize: 9, marginBottom: 2 },
+  subSlate: { color: '#475569', fontSize: 9, marginBottom: 2 },
+  subYellow: { color: '#b45309', fontSize: 10, fontWeight: 'bold', marginBottom: 2 },
+
+  footer: { position: 'absolute', bottom: 15, left: 0, right: 0, textAlign: 'center' },
+  footerNotice: { fontSize: 8, color: '#64748b', marginBottom: 2 },
+  footerBrand: { fontSize: 10, color: '#334155', fontWeight: 'bold' }
+});
+
+const ProposalPDF = ({ data }: { data: any }) => (
+  <Document>
+    <Page size="A4" style={pdfStyles.page}>
+      <View style={pdfStyles.topBar} fixed />
+      <View style={pdfStyles.bottomBar} fixed />
+
+      <View style={pdfStyles.headerContainer}>
+        <View>
+          <Text style={pdfStyles.brandTitle}>FLOLIM ENERGY SOLUTION</Text>
+          <Text style={pdfStyles.mainTitle}>스마트 조명 도입 성과 분석 리포트</Text>
+          <View style={pdfStyles.siteTag}>
+            <Text style={pdfStyles.siteTagLabel}>대상 현장</Text>
+            <Text style={{ ...pdfStyles.siteTagValue, color: data.siteName ? '#0f172a' : '#94a3b8' }}>
+              {data.siteName || '현장명 미입력'}
+            </Text>
+          </View>
+        </View>
+        <Text style={pdfStyles.dateText}>분석 기준일 : {data.date}</Text>
+      </View>
+
+      <Text style={pdfStyles.descText}>
+        귀사의 현장 운영 데이터를 기반으로 산출된 초고효율 LED 및 IoT 스마트 제어 시스템 도입에 따른 예상 에너지 절감액 및 투자 회수(ROI) 분석 결과입니다.
+      </Text>
+
+      <View style={{ flex: 1 }}>
+        <View>
+          <Text style={pdfStyles.sectionTitle}>교체 대상 조명 내역</Text>
+          <View style={pdfStyles.tableContainer}>
+            <View style={pdfStyles.tableHeader}>
+              <Text style={pdfStyles.col1}>종류</Text>
+              <Text style={pdfStyles.col2}>수량</Text>
+              <Text style={pdfStyles.col3}>전력 절감</Text>
+            </View>
+            {data.lights.length > 0 ? (
+              <>
+                {data.lights.slice(0, 5).map((l: any, i: number) => (
+                  <View key={i} style={{ ...pdfStyles.tableRow, borderBottom: i === 4 || i === data.lights.length -1 ? 'none' : '1px solid #e2e8f0' }}>
+                    <Text style={pdfStyles.cell1}>{l.type}</Text>
+                    <Text style={pdfStyles.cell2}>{formatNum(l.qty)}구</Text>
+                    <Text style={pdfStyles.cell3}>{l.oldW}W → {l.newW}W</Text>
+                  </View>
+                ))}
+                {data.lights.length > 5 && (
+                  <View style={{ padding: 6, backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                    <Text style={{ textAlign: 'center', fontSize: 9, color: '#64748b', fontWeight: 'bold' }}>... 외 {data.lights.length - 5}건 추가됨</Text>
+                  </View>
+                )}
+              </>
+            ) : (
+              <View style={{ padding: 15, alignItems: 'center' }}>
+                <Text style={{ fontSize: 9, color: '#94a3b8' }}>등록된 조명이 없습니다.</Text>
+              </View>
+            )}
+            {data.lights.length > 0 && (
+              <View style={pdfStyles.tableFooter}>
+                <Text style={{ flex: 2, textAlign: 'center', fontSize: 10, color: '#334155', fontWeight: 'bold' }}>합계</Text>
+                <Text style={{ flex: 1, textAlign: 'center', fontSize: 10, color: '#d97706', fontWeight: 'bold' }}>{formatNum(data.totalQty)}구</Text>
+                <Text style={{ flex: 1.5 }}></Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View style={pdfStyles.giantBox}>
+          <View style={pdfStyles.criteriaBoxFull}>
+            <Text style={{ fontSize: 10, color: '#475569', fontWeight: 'bold', marginRight: 8 }}>※ 시뮬레이션 적용 기준</Text>
+            <Text style={{ fontSize: 9, color: '#64748b' }}>전력 단가 {data.rate || 0}원/kWh | 운영 {data.hours || 0}h/365d | 스마트 디밍 {data.dimmingRate}%</Text>
+          </View>
+
+          <View style={pdfStyles.splitRow}>
+            <View style={pdfStyles.col}>
+              <Text style={pdfStyles.sectionTitle}>요금 절감 상세 비교</Text>
+              <View style={pdfStyles.cardLight}>
+                <Text style={pdfStyles.cardLabelLight}>개선 전 (기존 요금)</Text>
+                <View style={pdfStyles.valContainer}>
+                  <Text style={pdfStyles.subLight}>월 평균 {formatNum(data.monthlyOldCost)} 원</Text>
+                  <Text>
+                    <Text style={pdfStyles.valLight}>{formatNum(data.oldCost)}</Text>
+                    <Text style={pdfStyles.unitLight}> 원</Text>
+                  </Text>
+                </View>
+              </View>
+
+              <View style={pdfStyles.cardSlate}>
+                <Text style={pdfStyles.cardLabelSlate}>도입 후 예상 요금</Text>
+                <View style={pdfStyles.valContainer}>
+                  <Text style={pdfStyles.subSlate}>월 평균 {formatNum(data.monthlySmartCost)} 원</Text>
+                  <Text>
+                    <Text style={pdfStyles.valSlate}>{formatNum(data.smartCost)}</Text>
+                    <Text style={pdfStyles.unitSlate}> 원</Text>
+                  </Text>
+                </View>
+              </View>
+
+              <View style={pdfStyles.cardYellow}>
+                <Text style={pdfStyles.cardLabelYellow}>순수 요금 절감액</Text>
+                <View style={pdfStyles.valContainer}>
+                  <Text style={pdfStyles.subYellow}>월 평균 {formatNum(data.monthlySave)} 원</Text>
+                  <Text>
+                    <Text style={pdfStyles.valYellow}>{formatNum(data.totalSave)}</Text>
+                    <Text style={pdfStyles.unitYellow}> 원</Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={pdfStyles.col}>
+              <Text style={pdfStyles.sectionTitle}>투자 성과 요약</Text>
+              <View style={pdfStyles.cardLight}>
+                <Text style={pdfStyles.cardLabelLight}>총 투자 사업비</Text>
+                <View style={pdfStyles.valContainer}>
+                  <Text style={{ ...pdfStyles.subLight, color: 'transparent' }}>spacer</Text>
+                  <Text>
+                    <Text style={pdfStyles.valLight}>{formatNum(data.totalCost)}</Text>
+                    <Text style={pdfStyles.unitLight}> 원</Text>
+                  </Text>
+                </View>
+              </View>
+
+              <View style={pdfStyles.cardSlate}>
+                <Text style={pdfStyles.cardLabelSlate}>예상 투자수익률 (ROI)</Text>
+                <View style={pdfStyles.valContainer}>
+                  <Text style={{ ...pdfStyles.subSlate, color: 'transparent' }}>spacer</Text>
+                  <Text>
+                    <Text style={pdfStyles.valSlate}>{data.roi.toFixed(1)}</Text>
+                    <Text style={pdfStyles.unitSlate}> %</Text>
+                  </Text>
+                </View>
+              </View>
+
+              <View style={pdfStyles.cardYellow}>
+                <Text style={pdfStyles.cardLabelYellow}>투자금 전액 회수 기간</Text>
+                <View style={pdfStyles.valContainer}>
+                  <Text style={{ ...pdfStyles.subYellow, color: 'transparent' }}>spacer</Text>
+                  <Text>
+                    <Text style={pdfStyles.valYellow}>{data.totalSave > 0 && data.totalCost > 0 ? data.paybackYears.toFixed(1) : '0'}</Text>
+                    <Text style={pdfStyles.unitYellow}> 년</Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <View style={pdfStyles.footer} fixed>
+        <Text style={pdfStyles.footerNotice}>본 분석 리포트의 데이터는 입력된 시뮬레이션 수치를 기반으로 산출된 예상치이며, 실제 현장 상황에 따라 차이가 발생할 수 있습니다.</Text>
+        <Text style={pdfStyles.footerBrand}>주식회사 플로림 | 1660-0687</Text>
+      </View>
+    </Page>
+  </Document>
+);
+
 function CountUp({ value, animate, isCurrency = false, decimals = 0 }: { value: number, animate: boolean, isCurrency?: boolean, decimals?: number }) {
-  const [count, setCount] = useState(value);
+  const [count, setCount] = useState(animate ? 0 : value);
 
   useEffect(() => {
     if (!animate) {
@@ -42,21 +268,20 @@ function CountUp({ value, animate, isCurrency = false, decimals = 0 }: { value: 
 }
 
 export default function App() {
-  const formatNum = (num: number) => new Intl.NumberFormat('ko-KR').format(Math.round(num));
-
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
 
   const [siteName, setSiteName] = useState('');
   const [lights, setLights] = useState<LightItem[]>([]);
   const [formType, setFormType] = useState(LIGHT_PRESETS[0].name);
   const [formOldW, setFormOldW] = useState<number | string>(LIGHT_PRESETS[0].defaultOld);
   const [formNewW, setFormNewW] = useState<number | string>(LIGHT_PRESETS[0].defaultNew);
-  const [formQty, setFormQty] = useState<number | string>(100);
+  const [formQty, setFormQty] = useState<number | string>('');
 
   const [hours, setHours] = useState<number | string>(11);
   const [days, setDays] = useState<number | string>(365);
   const [rate, setRate] = useState<number | string>(145);
-  const [dimmingRate, setDimmingRate] = useState(0); 
+  const [dimmingRate, setDimmingRate] = useState(40); 
 
   const [quoteA, setQuoteA] = useState('');
   const [quoteB, setQuoteB] = useState('');
@@ -78,6 +303,7 @@ export default function App() {
       id: Date.now(), type: formType, oldW: Number(formOldW), newW: Number(formNewW), qty: Number(formQty),
     };
     setLights([...lights, newItem]);
+    setFormQty('');
   };
 
   const handleRemoveLight = (id: number) => setLights(lights.filter(l => l.id !== id));
@@ -85,6 +311,13 @@ export default function App() {
   const handleNumChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/[^0-9]/g, '');
     setter(rawValue ? parseInt(rawValue, 10).toLocaleString('ko-KR') : '');
+  };
+
+  const handleModeToggle = (mode: boolean) => {
+    setIsPreviewMode(mode);
+    if (mode) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const totalOldW = lights.reduce((sum, light) => sum + (light.oldW * light.qty), 0);
@@ -112,35 +345,66 @@ export default function App() {
 
   const roi = totalCost > 0 && totalSave > 0 ? (totalSave / totalCost) * 100 : 0;
   const paybackYears = totalSave > 0 && totalCost > 0 ? (totalCost / totalSave) : 0;
-  
-  const costPercent = oldCost > 0 ? (smartCost / oldCost) * 100 : 0;
+
+  const handleDownloadPDF = async () => {
+    if (lights.length === 0) {
+      alert('조명 데이터를 최소 1개 이상 추가해 주세요.');
+      return;
+    }
+    
+    setIsPdfGenerating(true);
+    
+    try {
+      const pdfData = {
+        siteName, date: new Date().toLocaleDateString('ko-KR'), totalCost, paybackYears, roi, 
+        oldCost, smartCost, totalSave, monthlyOldCost, monthlySmartCost, monthlySave, 
+        rate, hours, dimmingRate, lights, totalQty
+      };
+
+      const doc = <ProposalPDF data={pdfData} />;
+      const blob = await pdf(doc).toBlob();
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${siteName || '플로림'}_스마트에너지_제안서.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      console.error('PDF 생성 상세 에러:', error);
+      alert(`PDF 생성 중 오류가 발생했습니다.\n상세: ${error.message || error}`);
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  };
 
   return (
-    <div className={`min-h-screen font-['Pretendard',sans-serif] pb-24 print:pb-0 selection:bg-teal-500 selection:text-white print:m-0 print:p-0 bg-[#020617] print:bg-white`}>
+    <div className={`min-h-screen font-['Pretendard',sans-serif] pb-24 selection:bg-yellow-500 selection:text-slate-900 bg-[#020617]`}>
       
       <style>
         {`
           @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-          @media print {
-            @page { margin: 8mm; size: A4 portrait; }
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: white !important; }
-          }
+          .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+          .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
         `}
       </style>
 
-      {/* 우측 하단 고정 플로팅 버튼 (대시보드 & 시연 모드 공통) */}
-      <div className="fixed bottom-5 right-5 md:bottom-8 md:right-8 z-50 flex flex-col-reverse sm:flex-row items-end gap-3 print:hidden animate-fade-in">
+      {/* 플로팅 버튼 */}
+      <div className="fixed bottom-5 right-5 md:bottom-8 md:right-8 z-50 flex flex-col-reverse sm:flex-row items-end gap-3 animate-fade-in">
         <button 
-          onClick={() => window.print()}
-          className="bg-slate-200/90 hover:bg-white backdrop-blur-md text-slate-900 px-5 py-3 rounded-full font-bold text-sm flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-slate-300 transition-all whitespace-nowrap"
+          onClick={handleDownloadPDF}
+          disabled={isPdfGenerating}
+          className="bg-[#050b14]/90 hover:bg-slate-800 backdrop-blur-md text-slate-300 hover:text-white px-6 py-3.5 rounded-full font-bold text-sm md:text-base flex items-center justify-center gap-2 shadow-xl border border-slate-700 transition-all whitespace-nowrap disabled:opacity-50"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-          {isPreviewMode ? '인쇄 / PDF 저장' : '제안서 인쇄 / PDF 저장'}
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          {isPdfGenerating ? 'PDF 굽는 중...' : '제안서 PDF 다운로드'}
         </button>
 
         <button 
-          onClick={() => setIsPreviewMode(!isPreviewMode)}
-          className="bg-blue-600/90 hover:bg-blue-500 backdrop-blur-md text-white px-6 py-3 rounded-full font-black text-sm flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(37,99,235,0.5)] border border-blue-500 transition-all whitespace-nowrap"
+          onClick={() => handleModeToggle(!isPreviewMode)}
+          className="bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-6 py-3.5 rounded-full font-black text-sm md:text-base flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(250,204,21,0.3)] transition-all whitespace-nowrap"
         >
           {isPreviewMode ? (
             <>
@@ -158,311 +422,288 @@ export default function App() {
 
       {/* ===================== 상단: 대시보드 ===================== */}
       {!isPreviewMode && (
-        <div className="print:hidden">
-          <div className="text-center py-6 bg-slate-900/50 border-b border-slate-800">
-            <h1 className="text-2xl font-black text-white mb-1">데이터 입력 대시보드 (내부용)</h1>
-            <p className="text-slate-400 text-xs">입력한 데이터는 하단의 제안서에 자동으로 동기화됩니다.</p>
+        <div className={isPdfGenerating ? "hidden" : "block"}>
+          <div className="border-b border-slate-800 bg-[#050b14] py-10 text-center relative overflow-hidden">
+            <h1 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight relative z-10">스마트 에너지 솔루션 시뮬레이터</h1>
+            <p className="text-slate-400 text-sm md:text-base font-medium relative z-10">데이터를 입력하시면 하단 리포트에 실시간 동기화됩니다.</p>
           </div>
 
-          <div className="container mx-auto px-4 max-w-5xl mt-6 space-y-5 mb-10">
-            <div className="bg-[#050b14] p-5 rounded-2xl border border-slate-700 flex flex-col md:flex-row gap-6 shadow-lg">
-              <div className="flex-1 w-full overflow-hidden">
-                <h2 className="text-white font-bold mb-3 flex items-center gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>조명 구성 추가</h2>
-                <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50 mb-3">
-                  <div className="grid grid-cols-3 gap-3 mb-3">
-                    <div className="col-span-3">
-                      <label className="text-[11px] text-slate-400 mb-1 block">조명 종류</label>
-                      <select value={formType} onChange={handleTypeChange} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none">
+          <div className="container mx-auto px-4 max-w-5xl mt-8 space-y-6 mb-10">
+            <div className="bg-[#050b14] p-6 lg:p-8 rounded-3xl border border-slate-800 flex flex-col md:flex-row gap-8 shadow-xl">
+              
+              <div className="flex-1 flex flex-col w-full min-h-0">
+                <h2 className="text-white font-bold mb-4 flex items-center gap-2 text-base"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>조명 구성 추가</h2>
+                <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 mb-4 shrink-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div className="sm:col-span-3">
+                      <label className="text-xs text-slate-400 mb-1 block">조명 종류</label>
+                      <select value={formType} onChange={handleTypeChange} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200 focus:border-slate-500 outline-none transition-colors cursor-pointer">
                         {LIGHT_PRESETS.map((p, i) => <option key={i} value={p.name}>{p.name}</option>)}
                       </select>
                     </div>
-                    <div><label className="text-[11px] text-slate-400 mb-1 block">기존 조명</label>
-                      <div className="relative"><input type="number" value={formOldW} onChange={(e)=>setFormOldW(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white pr-7 focus:border-blue-500 outline-none" /><span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">W</span></div>
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">기존 조명</label>
+                      <div className="relative"><input type="number" value={formOldW} onChange={(e)=>setFormOldW(e.target.value)} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200 pr-7" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold pointer-events-none">W</span></div>
                     </div>
-                    <div><label className="text-[11px] text-teal-400 font-bold mb-1 block">신규 LED</label>
-                      <div className="relative"><input type="number" value={formNewW} onChange={(e)=>setFormNewW(e.target.value)} className="w-full bg-teal-500/10 border border-teal-500/30 rounded-lg px-3 py-2 text-sm text-teal-400 font-bold pr-7 focus:border-teal-500 outline-none" /><span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-teal-400/70 text-xs font-bold">W</span></div>
+                    <div>
+                      <label className="text-xs text-yellow-500 font-bold mb-1 block">신규 LED</label>
+                      <div className="relative"><input type="number" value={formNewW} onChange={(e)=>setFormNewW(e.target.value)} className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2.5 text-base text-yellow-400 font-bold pr-7" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500/70 text-sm font-bold pointer-events-none">W</span></div>
                     </div>
-                    <div><label className="text-[11px] text-slate-400 mb-1 block">수량</label>
-                      <div className="relative"><input type="number" value={formQty} onChange={(e)=>setFormQty(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white pr-7 focus:border-blue-500 outline-none" /><span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">구</span></div>
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">수량</label>
+                      <div className="relative"><input type="number" value={formQty} onChange={(e)=>setFormQty(e.target.value)} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200 pr-7" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold pointer-events-none">구</span></div>
                     </div>
                   </div>
-                  <button onClick={handleAddLight} className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 rounded-lg text-sm transition-colors">리스트에 추가하기</button>
+                  <button onClick={handleAddLight} className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl text-base transition-colors shadow-sm">리스트에 추가하기</button>
                 </div>
                 
                 {lights.length > 0 && (
-                  <div className="mt-2 border border-slate-700 rounded-lg overflow-x-auto max-h-40 overflow-y-auto">
-                    <table className="w-full text-xs text-left min-w-[300px]">
-                      <thead className="bg-slate-800 text-slate-400 sticky top-0">
-                        <tr>
-                          <th className="px-3 py-2 whitespace-nowrap font-bold">종류</th>
-                          <th className="px-3 py-2 text-right whitespace-nowrap font-bold">W변화</th>
-                          <th className="px-3 py-2 text-right whitespace-nowrap font-bold">수량</th>
-                          <th className="px-3 py-2 text-center whitespace-nowrap font-bold">삭제</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/50 bg-[#050b14]">
-                        {lights.map(l => (
-                          <tr key={l.id}>
-                            <td className="px-3 py-2 text-white whitespace-nowrap">{l.type}</td>
-                            <td className="px-3 py-2 text-right text-slate-300 whitespace-nowrap">{l.oldW} <span className="text-teal-400 font-bold mx-1">→</span> <span className="text-teal-400 font-bold">{l.newW}</span></td>
-                            <td className="px-3 py-2 text-right text-white font-bold whitespace-nowrap">{formatNum(l.qty)}구</td>
-                            <td className="px-3 py-2 text-center whitespace-nowrap"><button onClick={() => handleRemoveLight(l.id)} className="text-slate-500 hover:text-red-400">✕</button></td>
+                  <div className="mt-2 border border-slate-800 rounded-xl flex-1 flex flex-col min-h-[150px] max-h-[250px] overflow-hidden bg-[#020617]/30">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+                      <table className="w-full text-sm text-left min-w-[300px] relative">
+                        <thead className="bg-[#050b14]/95 text-slate-400 sticky top-0 z-10 shadow-sm backdrop-blur-sm">
+                          <tr>
+                            <th className="px-4 py-3 whitespace-nowrap font-medium text-center">종류</th>
+                            <th className="px-4 py-3 text-center whitespace-nowrap font-medium">W변화</th>
+                            <th className="px-4 py-3 text-center whitespace-nowrap font-medium">수량</th>
+                            <th className="px-4 py-3 text-center whitespace-nowrap font-medium">삭제</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/50 text-center">
+                          {lights.map(l => (
+                            <tr key={l.id} className="hover:bg-slate-800/40 transition-colors">
+                              <td className="px-4 py-3 text-slate-300 whitespace-nowrap">{l.type}</td>
+                              <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{l.oldW} <span className="text-yellow-500 font-bold mx-1">→</span> <span className="text-yellow-400 font-bold">{l.newW}</span></td>
+                              <td className="px-4 py-3 text-white font-bold whitespace-nowrap">{formatNum(l.qty)}구</td>
+                              <td className="px-4 py-3 whitespace-nowrap"><button onClick={() => handleRemoveLight(l.id)} className="text-slate-600 hover:bg-red-500/20 hover:text-red-400 p-1.5 rounded transition-colors">✕</button></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="flex-1 border-t md:border-t-0 md:border-l border-slate-800 pt-5 md:pt-0 md:pl-6">
-                <h2 className="text-white font-bold mb-3 flex items-center gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>현장 및 제어 설정</h2>
+              <div className="flex-1 border-t md:border-t-0 md:border-l border-slate-800 pt-6 md:pt-0 md:pl-8">
+                <h2 className="text-white font-bold mb-4 flex items-center gap-2 text-base"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>현장 및 제어 설정</h2>
                 
-                <div className="mb-4">
-                  <label className="text-[11px] text-slate-400 mb-1 block">대상 현장명 (고객사명)</label>
-                  <input 
-                    type="text" 
-                    value={siteName} 
-                    onChange={(e)=>setSiteName(e.target.value)} 
-                    placeholder="예: OOOO 물류센터, OOO빌딩 등" 
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none placeholder:text-slate-600" 
-                  />
+                <div className="mb-5">
+                  <label className="text-xs text-slate-400 mb-1.5 block">대상 현장명 (고객사명)</label>
+                  <input type="text" value={siteName} onChange={(e)=>setSiteName(e.target.value)} placeholder="예: OOOO 물류센터, OOO빌딩 등" className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200 focus:border-slate-500 outline-none transition-colors" />
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div><label className="text-[11px] text-slate-500 mb-1 block whitespace-nowrap">일 점등(h)</label><input type="number" value={hours} onChange={(e)=>setHours(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" /></div>
-                  <div><label className="text-[11px] text-slate-500 mb-1 block whitespace-nowrap">연 가동(d)</label><input type="number" value={days} onChange={(e)=>setDays(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" /></div>
-                  <div><label className="text-[11px] text-slate-500 mb-1 block whitespace-nowrap">단가(원)</label><input type="number" value={rate} onChange={(e)=>setRate(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" /></div>
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                  <div><label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">일 점등(h)</label><input type="number" value={hours} onChange={(e)=>setHours(e.target.value)} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200" /></div>
+                  <div><label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">연 가동(d)</label><input type="number" value={days} onChange={(e)=>setDays(e.target.value)} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200" /></div>
+                  <div><label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">단가(원)</label><input type="number" value={rate} onChange={(e)=>setRate(e.target.value)} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200" /></div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-xs mb-1"><span className="text-slate-400 whitespace-nowrap">디밍 절감률</span><span className="text-teal-400 font-bold">{dimmingRate}%</span></div>
-                  <input type="range" min="0" max="100" step="1" value={dimmingRate} onChange={(e) => setDimmingRate(Number(e.target.value))} className="w-full accent-blue-500 h-2 bg-slate-800 rounded-lg cursor-pointer" />
+                  <div className="flex justify-between text-sm mb-2"><span className="text-slate-400 whitespace-nowrap">디밍 절감률</span><span className="text-slate-200 font-bold">{dimmingRate}%</span></div>
+                  <input type="range" min="0" max="100" step="1" value={dimmingRate} onChange={(e) => setDimmingRate(Number(e.target.value))} className="w-full accent-slate-500 h-2 bg-[#020617] rounded-lg cursor-pointer" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-800/50 p-5 rounded-2xl border-2 border-dashed border-slate-600 mb-12">
-              <h2 className="text-white font-bold mb-3 flex items-center gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>협력사 견적 합산 (내부 원가)</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            <div className="bg-[#050b14] p-6 lg:p-8 rounded-3xl border border-slate-800 shadow-xl mb-12">
+              <h2 className="text-white font-bold mb-4 flex items-center gap-2 text-base"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>협력사 견적 합산 (내부 원가)</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {[
-                  { label: 'A사 견적 (예: 자재)', val: quoteA, setter: setQuoteA },
-                  { label: 'B사 견적 (예: 제어)', val: quoteB, setter: setQuoteB },
-                  { label: 'C사 견적 (예: 시공)', val: quoteC, setter: setQuoteC }
+                  { label: '플로림 (A)', val: quoteA, setter: setQuoteA },
+                  { label: '투반 (B)', val: quoteB, setter: setQuoteB },
+                  { label: '창성 (C)', val: quoteC, setter: setQuoteC }
                 ].map((q, i) => (
-                  <div key={i}><label className="text-[11px] text-slate-400 mb-1 block whitespace-nowrap">{q.label}</label>
-                    <div className="relative"><input type="text" value={q.val} onChange={handleNumChange(q.setter)} placeholder="0" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-right font-bold pr-8 focus:border-blue-500 outline-none" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">원</span></div>
+                  <div key={i}>
+                    <label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap pl-1">{q.label}</label>
+                    <div className="relative">
+                      <input type="text" value={q.val} onChange={handleNumChange(q.setter)} placeholder="0" className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-3 text-slate-200 text-right font-bold pr-8 text-base" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 text-base">원</span>
+                    </div>
                   </div>
                 ))}
               </div>
-              <div className="flex justify-end items-baseline gap-3 pt-3 border-t border-slate-700">
-                <span className="text-slate-400 text-xs whitespace-nowrap">총 사업비 합산 :</span>
-                <span className="text-xl font-black text-slate-300 whitespace-nowrap">{formatNum(totalCost)} 원</span>
+              <div className="flex justify-end items-center gap-3 pt-5 border-t border-slate-800">
+                <span className="text-slate-500 text-sm whitespace-nowrap">총 사업비 합산 :</span>
+                <span className="text-2xl font-black text-yellow-400">{formatNum(totalCost)} <span className="text-xl font-bold text-slate-500">원</span></span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ===================== 하단: 제안서 영역 ===================== */}
-      <div className={`container mx-auto print:max-w-[200mm] print:px-0 transition-all duration-500 print:mt-0 ${isPreviewMode ? 'max-w-5xl px-0 mt-0 mb-0' : 'max-w-5xl px-4 mt-8'}`}>
-        
-        <div className={`bg-[#050b14] print:bg-white shadow-[0_20px_60px_rgba(0,0,0,0.5)] print:shadow-none relative overflow-hidden text-white print:text-slate-900 print:border print:border-slate-300 ${isPreviewMode ? 'rounded-none border-x-0 border-b-0 print:rounded-none print:border-none' : 'md:rounded-2xl border border-slate-700'}`}>
-          
-          <div className="absolute top-0 left-0 w-full h-2 md:h-3 bg-blue-800 print:h-2"></div>
+      {/* ===================== 하단: 시연 화면 (웹 뷰) ===================== */}
+      <div className={`container mx-auto transition-all duration-500 ${isPreviewMode ? 'max-w-5xl mt-0 px-0' : 'max-w-5xl mt-8 px-4'} ${isPdfGenerating ? 'hidden' : 'block'}`}>
+        <div className={`bg-[#050b14] shadow-2xl relative overflow-hidden border border-slate-800 ${isPreviewMode ? 'rounded-none border-x-0 border-b-0' : 'md:rounded-3xl'} flex flex-col min-h-screen`}>
+          <div className="absolute top-0 left-0 w-full h-2 md:h-3 bg-slate-700 z-20"></div>
+          <div className="absolute bottom-0 left-0 w-full h-2 md:h-3 bg-slate-700 z-20"></div>
 
-          <div className={`px-5 sm:px-8 lg:px-12 print:px-8 print:pt-6 ${isPreviewMode ? 'pt-6 md:pt-10' : 'pt-8 md:pt-14'}`}>
-            <div className={`flex flex-col lg:flex-row lg:justify-between lg:items-end pb-4 print:pb-2 border-b-[3px] border-slate-700 print:border-slate-300 mb-6 print:mb-3`}>
-              <div className="mb-3 lg:mb-0">
-                <p className="text-blue-500 print:text-blue-800 font-black tracking-widest text-[10px] sm:text-xs lg:text-sm print:text-[10px] mb-1 lg:mb-2 print:mb-1 whitespace-nowrap">FLOLIM ENERGY SOLUTION</p>
-                <h1 className="text-2xl sm:text-[28px] md:text-[32px] lg:text-4xl print:text-[22px] font-black tracking-tight leading-tight break-keep text-white print:text-slate-900 whitespace-nowrap sm:whitespace-normal">스마트 조명 도입 성과 분석 리포트</h1>
-                
-                {siteName && (
-                  <div className="mt-2 lg:mt-3 print:mt-1.5 inline-flex items-center gap-2 bg-slate-800/50 print:bg-slate-100 px-3 py-1.5 print:px-2 print:py-1 rounded-lg border border-slate-700 print:border-slate-200">
-                    <span className="text-slate-400 print:text-slate-500 text-xs print:text-[9px] font-bold">대상 현장</span>
-                    <span className="text-teal-400 print:text-orange-700 text-sm lg:text-base print:text-[11px] font-black">{siteName}</span>
+          <div className="flex-1 flex flex-col w-full h-full relative z-10">
+            <div className={`px-5 sm:px-8 lg:px-12 ${isPreviewMode ? 'pt-6 md:pt-10' : 'pt-8 md:pt-14'}`}>
+              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center pb-4 border-b border-slate-800 mb-6">
+                <div className="mb-3 lg:mb-0">
+                  <p className="text-slate-500 font-bold tracking-widest text-[10px] sm:text-xs lg:text-sm mb-1 lg:mb-2 whitespace-nowrap">FLOLIM ENERGY SOLUTION</p>
+                  <h1 className="text-2xl sm:text-[28px] md:text-[32px] lg:text-4xl font-black tracking-tight break-keep text-white whitespace-nowrap sm:whitespace-normal">스마트 조명 도입 성과 분석 리포트</h1>
+                  <div className="mt-2 lg:mt-3 inline-block px-3 py-1.5 rounded-lg border bg-slate-900 border-slate-800 whitespace-nowrap">
+                    <span className="inline-block align-middle mr-2 text-slate-500 text-xs font-bold">대상 현장</span>
+                    <span className={`inline-block align-middle ${siteName ? 'text-yellow-500' : 'text-slate-600'} text-sm lg:text-base font-black`}>{siteName || '현장명 미입력'}</span>
                   </div>
-                )}
+                </div>
+                <div className="text-left lg:text-right text-[11px] sm:text-xs lg:text-sm text-slate-500 font-medium whitespace-nowrap">분석 기준일 : {new Date().toLocaleDateString('ko-KR')}</div>
               </div>
-              <div className="text-left lg:text-right text-[11px] sm:text-xs lg:text-sm print:text-[10px] text-slate-400 print:text-slate-500 font-bold whitespace-nowrap inline-block">
-                분석 기준일 : {new Date().toLocaleDateString('ko-KR')}
-              </div>
+              {!isPreviewMode && <p className="text-slate-400 text-xs sm:text-sm lg:text-base font-medium break-keep mb-8">귀사의 현장 운영 데이터를 기반으로 산출된 초고효율 LED 및 IoT 스마트 제어 시스템 도입에 따른 <strong className="text-white">예상 에너지 절감액 및 투자 회수(ROI) 분석 결과</strong>입니다.</p>}
             </div>
-            
-            {!isPreviewMode && (
-              <p className="text-slate-400 text-xs sm:text-sm lg:text-base print:text-[11px] font-medium break-keep leading-relaxed mb-8 print:mb-0 print:hidden">
-                귀사의 현장 운영 데이터를 기반으로 산출된 초고효율 LED 및 IoT 스마트 제어 시스템 도입에 따른 <strong className="text-white whitespace-nowrap">예상 에너지 절감액 및 투자 회수(ROI) 분석 결과</strong>입니다.
-              </p>
-            )}
-          </div>
 
-          <div className={`px-5 sm:px-8 lg:px-12 pb-10 lg:pb-12 print:px-8 print:pb-6 print:pt-0 ${isPreviewMode ? 'pt-2 lg:pt-4' : ''}`}>
-            
-            {/* 1. 핵심 지표 영역 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8 print:gap-3 print:mb-4">
+            <div className={`px-5 sm:px-8 lg:px-12 flex-1 flex flex-col justify-center ${isPreviewMode ? 'pt-2 lg:pt-4' : ''}`}>
               
-              {/* 총 투자 사업비 (차분한 회색톤) */}
-              <div className="bg-slate-800/40 print:bg-slate-50 border border-slate-700/50 print:border-slate-200 rounded-2xl lg:rounded-3xl print:rounded-xl p-5 lg:p-8 print:p-4 flex flex-col justify-center print:text-center relative">
-                <p className="text-slate-500 print:text-slate-400 text-[11px] lg:text-sm print:text-[11px] font-bold mb-1 lg:mb-2 print:mb-0.5 break-keep whitespace-nowrap">총 투자 사업비</p>
-                <p className="text-2xl lg:text-4xl print:text-xl font-bold text-slate-300 print:text-slate-600 tracking-tight break-keep whitespace-nowrap">
-                  <CountUp value={totalCost} animate={isPreviewMode} isCurrency={true} /> <span className="text-sm lg:text-lg print:text-xs font-medium text-slate-500">원</span>
-                </p>
-              </div>
-
-              {/* 연간 전기요금 예상 절감액 (청록색 강조) */}
-              <div className="bg-teal-900/10 print:bg-orange-50 border-2 border-teal-500/30 print:border-orange-300 rounded-2xl lg:rounded-3xl print:rounded-xl p-5 lg:p-8 print:p-4 shadow-sm flex flex-col justify-center relative overflow-hidden print:text-center">
-                <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-teal-500/10 print:hidden rounded-full blur-3xl"></div>
-                <div className="absolute top-5 right-5 lg:top-8 lg:right-8 print:hidden bg-teal-500/20 p-2 rounded-full z-10">
-                  <svg className="w-5 h-5 lg:w-6 lg:h-6 text-teal-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                </div>
-                <p className="text-teal-400 print:text-orange-700 text-[11px] lg:text-base print:text-[11px] font-bold mb-1 lg:mb-2 print:mb-0.5 relative z-10 break-keep whitespace-nowrap">연간 전기요금 예상 절감액</p>
-                <div className="relative z-10 flex flex-col items-start print:items-center">
-                  <p className="text-3xl lg:text-5xl print:text-2xl font-black text-teal-400 print:text-orange-700 tracking-tight break-keep whitespace-nowrap">
-                    <CountUp value={totalSave} animate={isPreviewMode} isCurrency={true} /> <span className="text-base lg:text-xl print:text-sm font-bold text-teal-400/70 print:text-orange-700/80">원/년</span>
-                  </p>
-                  <div className="mt-2 lg:mt-3">
-                    <span className="inline-block bg-teal-500/20 print:bg-orange-200 text-teal-400 print:text-orange-800 px-3 py-1 lg:px-4 lg:py-1.5 rounded-full text-[10px] lg:text-xs print:text-[10px] font-bold border border-teal-500/30 print:border-orange-300">
-                      월 평균 약 {formatNum(monthlySave)}원 절감
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. ROI & 회수 기간 영역 */}
-            <div className="bg-slate-900 print:bg-blue-50/50 border border-slate-800 print:border-blue-200 text-white print:text-slate-800 rounded-2xl lg:rounded-3xl print:rounded-xl p-6 lg:p-12 print:p-5 mb-6 lg:mb-12 print:mb-4 shadow-xl print:shadow-none">
-              <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-6 lg:gap-10 print:gap-4 divide-y md:divide-y-0 print:divide-y-0 md:divide-x print:divide-x divide-slate-700 print:divide-blue-200">
-                
-                {/* 💡 ROI 복구 (총 투자 사업비와 동일한 크기와 톤으로 설정) */}
-                <div className="text-center pt-2 md:pt-0 print:pt-0 relative flex flex-col justify-center">
-                  <p className="text-slate-400 print:text-slate-500 text-[11px] lg:text-sm print:text-[10px] font-bold tracking-widest mb-1 lg:mb-2 print:mb-1 break-keep whitespace-nowrap">예상 투자수익률 (ROI)</p>
-                  <p className="text-2xl lg:text-4xl print:text-xl font-bold text-slate-300 print:text-slate-600 whitespace-nowrap relative z-10">
-                    {totalCost > 0 ? <CountUp value={roi} animate={isPreviewMode} decimals={1} /> : '0'} <span className="text-sm lg:text-lg print:text-sm font-medium">%</span>
-                  </p>
-                </div>
-
-                {/* 회수 기간 (블루 강조) */}
-                <div className="text-center pt-6 md:pt-0 print:pt-0 relative">
-                  <div className="absolute top-6 md:top-0 right-0 print:hidden opacity-20">
-                    <svg className="w-10 h-10 lg:w-12 lg:h-12 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  </div>
-                  <p className="text-slate-300 print:text-slate-600 text-[12px] lg:text-lg print:text-[12px] font-black tracking-widest mb-2 lg:mb-4 print:mb-1 break-keep whitespace-nowrap">투자금 전액 회수 기간</p>
-                  <p className="text-5xl lg:text-7xl print:text-4xl font-black text-blue-400 print:text-blue-800 drop-shadow-lg print:drop-shadow-none whitespace-nowrap relative z-10">
-                    {totalSave > 0 && totalCost > 0 ? <CountUp value={paybackYears} animate={isPreviewMode} decimals={1} /> : '0'} <span className="text-2xl lg:text-4xl print:text-2xl font-bold">년</span>
-                  </p>
-                </div>
-
-              </div>
-            </div>
-
-            {/* 3. 상세 분석 & 조명 내역 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 print:grid-cols-2 gap-8 lg:gap-10 print:gap-6 print:mb-0">
-              
-              <div>
-                <h3 className="text-base lg:text-xl print:text-[13px] font-black border-l-[4px] lg:border-l-[5px] border-blue-500 print:border-blue-800 pl-3 lg:pl-4 print:pl-3 mb-3 lg:mb-5 print:mb-3 text-white print:text-slate-800 break-keep whitespace-nowrap">요금 절감 상세 비교</h3>
-                
-                <div className="space-y-3 lg:space-y-4 print:space-y-2">
-                  <div className="bg-slate-800 print:bg-slate-100 p-4 lg:p-5 print:p-3 rounded-xl print:rounded-lg border border-slate-700 print:border-slate-300 shadow-sm print:shadow-none">
-                    <div className="flex justify-between items-end mb-2 lg:mb-3 print:mb-1.5">
-                      <span className="text-slate-400 print:text-slate-500 font-bold text-[11px] lg:text-sm print:text-[10px] break-keep whitespace-nowrap mb-1">개선 전 (기존 요금)</span>
-                      <div className="text-right flex flex-col items-end gap-1 print:gap-0.5">
-                        <span className="text-lg lg:text-2xl print:text-sm font-black text-white print:text-slate-800 whitespace-nowrap leading-none">{formatNum(oldCost)} 원</span>
-                        <span className="text-[10px] lg:text-xs print:text-[9px] text-slate-400 print:text-slate-500 font-medium">월 평균 {formatNum(monthlyOldCost)} 원</span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-slate-600 print:bg-slate-300 h-1.5 lg:h-2 print:h-1.5 rounded-full"></div>
-                  </div>
-                  
-                  {/* 💡 강조: 도입 후 요금 (블루톤으로 시각적 차별화 및 강조) */}
-                  <div className="bg-blue-900/10 print:bg-blue-50 border-2 border-blue-500/40 print:border-blue-300 p-4 lg:p-5 print:p-3 rounded-xl print:rounded-lg shadow-sm print:shadow-none relative overflow-hidden">
-                    <div className="flex justify-between items-end mb-2 lg:mb-3 print:mb-1.5">
-                      <span className="text-blue-400 print:text-blue-700 font-bold text-[11px] lg:text-sm print:text-[11px] break-keep whitespace-nowrap mb-1">도입 후 (예상 요금)</span>
-                      <div className="text-right flex flex-col items-end gap-1 print:gap-0.5">
-                        <span className="text-lg lg:text-2xl print:text-sm font-black text-blue-400 print:text-blue-800 whitespace-nowrap leading-none"><CountUp value={smartCost} animate={isPreviewMode} isCurrency={true} /> 원</span>
-                        <span className="text-[10px] lg:text-xs print:text-[9px] text-blue-500 print:text-blue-600 font-medium">월 평균 <CountUp value={monthlySmartCost} animate={isPreviewMode} isCurrency={true} /> 원</span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-slate-700 print:bg-blue-200 h-1.5 lg:h-2 print:h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-blue-500 print:bg-blue-600 h-full transition-all duration-[1500ms] ease-out" style={{ width: `${isPreviewMode ? costPercent : (oldCost > 0 ? costPercent : 0)}%` }}></div>
-                    </div>
-                  </div>
-
-                  {/* 강력 강조: 순수 요금 절감액 (청록톤) */}
-                  <div className="mt-3 lg:mt-4 print:mt-2 bg-teal-900/20 print:bg-orange-50 border-2 border-teal-500/30 print:border-orange-400 p-4 lg:p-5 print:p-3 rounded-xl print:rounded-lg relative overflow-hidden">
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 lg:w-2 print:w-1.5 bg-teal-500 print:bg-orange-500"></div>
-                    <div className="flex justify-between items-center pl-2 lg:pl-3 print:pl-2">
-                      <span className="text-teal-400 print:text-orange-800 font-black text-sm lg:text-base print:text-[11px] break-keep whitespace-nowrap leading-tight">순수 요금 절감액<br className="hidden print:block"/><span className="text-[10px] lg:text-xs text-teal-500/70 print:text-orange-600/80 print:hidden font-medium block mt-1">(기존 - 도입 후)</span></span>
-                      <div className="text-right flex flex-col items-end gap-1.5 lg:gap-2 print:gap-1">
-                        <span className="text-2xl lg:text-3xl print:text-lg font-black text-teal-400 print:text-orange-700 leading-none">
-                          <CountUp value={totalSave} animate={isPreviewMode} isCurrency={true} /> 원
-                        </span>
-                        <span className="text-[10px] lg:text-xs print:text-[9px] text-teal-500 print:text-orange-600 font-bold bg-teal-500/10 print:bg-orange-200/50 px-2 py-0.5 rounded">
-                          월 평균 <CountUp value={monthlySave} animate={isPreviewMode} isCurrency={true} /> 원
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-                
-                <div className="mt-4 print:mt-3 bg-slate-800/50 print:bg-slate-50 p-3 lg:p-4 print:p-2 rounded-lg lg:rounded-xl border border-slate-700 print:border-slate-300">
-                  <p className="text-[10px] lg:text-sm print:text-[9px] font-bold text-slate-300 print:text-slate-600 mb-1 whitespace-nowrap">※ 시뮬레이션 적용 기준</p>
-                  <p className="text-[10px] lg:text-xs print:text-[9px] text-slate-400 print:text-slate-500">
-                    전력 단가 <strong className="text-slate-300 print:text-slate-700">{rate}원/kWh</strong> | 운영 <strong className="text-slate-300 print:text-slate-700">{hours}h/365d</strong> | 스마트 디밍 <strong className="text-slate-300 print:text-slate-700">{dimmingRate}%</strong>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col h-full">
-                <h3 className="text-base lg:text-xl print:text-[13px] font-black border-l-[4px] lg:border-l-[5px] border-blue-500 print:border-blue-800 pl-3 lg:pl-4 print:pl-3 mb-3 lg:mb-5 print:mb-3 text-white print:text-slate-800 break-keep whitespace-nowrap">교체 대상 조명 내역</h3>
-                
-                <div className="bg-slate-800 print:bg-white border border-slate-700 print:border-slate-300 rounded-xl lg:rounded-2xl print:rounded-lg overflow-x-auto print:overflow-visible shadow-sm print:shadow-none flex-1">
-                  <table className="w-full text-[11px] lg:text-sm print:text-[10px] text-left min-w-max print:text-center print:min-w-0">
-                    <thead className="bg-slate-900 print:bg-slate-100 text-slate-300 print:text-slate-600 border-b border-slate-700 print:border-slate-300">
-                      <tr>
-                        <th className="px-3 lg:px-4 py-2 lg:py-3 print:px-2 print:py-1.5 font-bold whitespace-nowrap print:text-left">종류</th>
-                        <th className="px-3 lg:px-4 py-2 lg:py-3 print:px-2 print:py-1.5 text-right font-bold whitespace-nowrap">수량</th>
-                        <th className="px-3 lg:px-4 py-2 lg:py-3 print:px-2 print:py-1.5 text-right font-bold text-teal-400 print:text-orange-600 whitespace-nowrap">전력 절감</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-700 print:divide-slate-200">
-                      {lights.length > 0 ? (
-                        lights.map(l => (
-                          <tr key={l.id} className="hover:bg-slate-700 print:hover:bg-slate-50 transition-colors">
-                            <td className="px-3 lg:px-4 py-2 lg:py-3 print:px-2 print:py-1.5 text-white print:text-slate-800 font-medium whitespace-nowrap print:text-left">{l.type}</td>
-                            <td className="px-3 lg:px-4 py-2 lg:py-3 print:px-2 print:py-1.5 text-right text-white print:text-slate-800 font-bold whitespace-nowrap">{formatNum(l.qty)}구</td>
-                            <td className="px-3 lg:px-4 py-2 lg:py-3 print:px-2 print:py-1.5 text-right text-slate-400 print:text-slate-600 whitespace-nowrap">
-                              {l.oldW}W <span className="text-teal-400 print:text-orange-600 font-black mx-0.5 lg:mx-1">→</span> <span className="text-teal-400 print:text-orange-700 font-bold">{l.newW}W</span>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr><td colSpan={3} className="px-3 lg:px-4 py-5 lg:py-8 print:py-4 text-center text-slate-500 print:text-slate-400 whitespace-nowrap">등록된 조명이 없습니다.</td></tr>
-                      )}
-                    </tbody>
-                    {lights.length > 0 && (
-                      <tfoot className="bg-slate-900 print:bg-slate-50 border-t border-slate-700 print:border-slate-300 font-bold">
+              <div className="mb-6 lg:mb-8 shrink-0">
+                <h3 className="text-base lg:text-xl font-black border-l-[4px] lg:border-l-[5px] border-slate-600 text-white pl-3 lg:pl-4 mb-3 lg:mb-5 break-keep whitespace-nowrap">교체 대상 조명 내역</h3>
+                {/* 💡 CSS 복구: absolute 제거 후 flex flex-col 적용 */}
+                <div className="flex flex-col w-full max-h-[250px] lg:max-h-[300px] bg-slate-900 border border-slate-800 rounded-xl lg:rounded-2xl overflow-hidden">
+                  <div className="overflow-y-auto custom-scrollbar">
+                    <table className="w-full table-fixed text-[11px] lg:text-sm text-center">
+                      <thead className="bg-slate-900/95 border-b border-slate-800 text-slate-400 sticky top-0 z-10 backdrop-blur-sm">
                         <tr>
-                          <td className="px-3 lg:px-4 py-2 lg:py-3 print:px-2 print:py-2 text-center text-slate-300 print:text-slate-600 whitespace-nowrap">합계</td>
-                          <td className="px-3 lg:px-4 py-2 lg:py-3 print:px-2 print:py-2 text-right text-teal-400 print:text-orange-700 print:text-sm whitespace-nowrap">{formatNum(totalQty)}구</td>
-                          <td></td>
+                          <th className="w-[45%] px-3 lg:px-4 py-3 font-bold whitespace-nowrap text-center">종류</th>
+                          <th className="w-[25%] px-3 lg:px-4 py-3 font-bold whitespace-nowrap text-center">수량</th>
+                          <th className="w-[30%] px-3 lg:px-4 py-3 font-bold text-yellow-500 whitespace-nowrap text-center">전력 절감</th>
                         </tr>
-                      </tfoot>
-                    )}
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/50">
+                        {lights.length > 0 ? (
+                          lights.map(l => (
+                            <tr key={l.id} className="hover:bg-slate-800/40 transition-colors">
+                              <td className="w-[45%] px-3 lg:px-4 py-3.5 font-medium break-keep text-center text-slate-200">{l.type}</td>
+                              <td className="w-[25%] px-3 lg:px-4 py-3.5 font-bold whitespace-nowrap text-center text-slate-200">{formatNum(l.qty)}구</td>
+                              <td className="w-[30%] px-3 lg:px-4 py-3.5 whitespace-nowrap text-center text-slate-500">
+                                <div className="flex items-center justify-center gap-1">
+                                  <span>{l.oldW}W</span>
+                                  <span className="text-yellow-500 font-black">→</span>
+                                  <span className="text-yellow-400 font-bold">{l.newW}W</span>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr><td colSpan={3} className="px-3 lg:px-4 py-8 text-center whitespace-nowrap text-slate-600">등록된 조명이 없습니다.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  {lights.length > 0 && (
+                    <div className="shrink-0 bg-slate-900/95 border-t border-slate-800 z-10 backdrop-blur-sm">
+                      <table className="w-full table-fixed text-[11px] lg:text-sm text-center">
+                        <tfoot className="font-bold text-slate-300">
+                          <tr>
+                            <td className="w-[45%] px-3 lg:px-4 py-3 text-center whitespace-nowrap">합계</td>
+                            <td className="w-[25%] px-3 lg:px-4 py-3 text-center text-sm whitespace-nowrap text-yellow-400">{formatNum(totalQty)}구</td>
+                            <td className="w-[30%] px-3 lg:px-4 py-3"></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
 
-            </div>
+              <div className="flex flex-col w-full mb-8 lg:mb-12 shrink-0">
+                
+                <div className="bg-slate-900/50 border border-slate-800 px-5 py-4 rounded-xl flex flex-col sm:flex-row items-center justify-center gap-2 lg:gap-4 mb-6 lg:mb-8">
+                  <span className="text-[11px] lg:text-sm font-bold text-slate-400 whitespace-nowrap">※ 시뮬레이션 적용 기준</span>
+                  <span className="text-[11px] lg:text-xs text-slate-500">전력 단가 <strong className="text-slate-300">{rate || 0}원/kWh</strong> <span className="mx-1 lg:mx-2">|</span> 운영 <strong className="text-slate-300">{hours || 0}h/365d</strong> <span className="mx-1 lg:mx-2">|</span> 스마트 디밍 <strong className="text-slate-300">{dimmingRate}%</strong></span>
+                </div>
 
-            <div className="hidden print:block mt-6 pt-4 border-t border-slate-300 text-center">
-              <p className="text-[9px] text-slate-500 mb-1">본 분석 리포트의 데이터는 입력된 시뮬레이션 수치를 기반으로 산출된 예상치이며, 실제 현장 상황에 따라 차이가 발생할 수 있습니다.</p>
-              <p className="text-[10px] font-bold text-slate-700">주식회사 플로림 | 1660-0687</p>
-            </div>
+                <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 w-full">
+                  
+                  <div className="flex-1 flex flex-col w-full">
+                    <h3 className="text-base lg:text-lg font-black border-l-[4px] lg:border-l-[5px] border-slate-600 text-white pl-3 lg:pl-4 mb-4 break-keep whitespace-nowrap">요금 절감 상세 비교</h3>
+                    
+                    <div className="flex flex-col gap-3 lg:gap-4">
+                      <div className="w-full min-h-[110px] lg:min-h-[130px] bg-slate-900 border border-slate-800 p-4 lg:p-5 rounded-xl flex flex-col">
+                        <span className="text-slate-500 font-bold text-xs lg:text-sm break-keep whitespace-nowrap self-start">개선 전 (기존 요금)</span>
+                        <div className="mt-auto flex flex-col items-end pt-3 w-full">
+                          <div className="text-[10px] lg:text-xs text-slate-600 font-medium mb-1 leading-none">월 평균 {formatNum(monthlyOldCost)} 원</div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-xl lg:text-2xl font-black text-slate-400 tracking-tighter"><CountUp value={oldCost} animate={isPreviewMode} isCurrency={true} /></span>
+                            <span className="text-[10px] lg:text-xs font-bold text-slate-400">원</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="w-full min-h-[110px] lg:min-h-[130px] bg-slate-800 border border-slate-700 p-4 lg:p-5 rounded-xl flex flex-col">
+                        <span className="text-slate-300 font-bold text-xs lg:text-sm break-keep whitespace-nowrap self-start">도입 후 예상 요금</span>
+                        <div className="mt-auto flex flex-col items-end pt-3 w-full">
+                          <div className="text-[10px] lg:text-xs text-slate-400 font-medium mb-1 leading-none">월 평균 <CountUp value={monthlySmartCost} animate={isPreviewMode} isCurrency={true} /> 원</div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-2xl lg:text-3xl font-black text-white tracking-tighter"><CountUp value={smartCost} animate={isPreviewMode} isCurrency={true} /></span>
+                            <span className="text-[10px] lg:text-xs font-bold text-white">원</span>
+                          </div>
+                        </div>
+                      </div>
 
+                      <div className="w-full min-h-[110px] lg:min-h-[130px] bg-yellow-500/10 border-2 border-yellow-500/50 p-4 lg:p-5 rounded-xl flex flex-col">
+                        <span className="text-yellow-500 font-black text-sm lg:text-base break-keep whitespace-nowrap leading-tight self-start">순수 요금 절감액</span>
+                        <div className="mt-auto flex flex-col items-end pt-3 w-full">
+                          <div className="text-[10px] lg:text-xs text-yellow-500/80 font-bold mb-1 leading-none inline-block">월 평균 <CountUp value={monthlySave} animate={isPreviewMode} isCurrency={true} /> 원</div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl lg:text-4xl font-black text-yellow-400 tracking-tighter"><CountUp value={totalSave} animate={isPreviewMode} isCurrency={true} /></span>
+                            <span className="text-[10px] lg:text-xs font-bold text-yellow-400">원</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 flex flex-col w-full">
+                    <h3 className="block lg:hidden text-base font-black border-l-[4px] border-slate-600 text-white pl-3 mb-4 break-keep whitespace-nowrap">투자 성과 요약</h3>
+                    <h3 className="hidden lg:block text-lg font-black border-l-[5px] border-slate-600 text-white pl-4 mb-4 break-keep whitespace-nowrap">투자 성과 요약</h3>
+                    
+                    <div className="flex flex-col gap-3 lg:gap-4">
+                      <div className="w-full min-h-[110px] lg:min-h-[130px] bg-slate-900 border border-slate-800 p-4 lg:p-5 rounded-xl flex flex-col">
+                        <span className="text-slate-500 font-bold text-xs lg:text-sm break-keep whitespace-nowrap self-start">총 투자 사업비</span>
+                        <div className="mt-auto flex flex-col items-end pt-3 w-full">
+                          <div className="text-[10px] lg:text-xs text-transparent font-medium mb-1 leading-none select-none">spacer</div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-xl lg:text-2xl font-black text-slate-400 tracking-tighter"><CountUp value={totalCost} animate={isPreviewMode} isCurrency={true} /></span>
+                            <span className="text-[10px] lg:text-xs font-bold text-slate-400">원</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="w-full min-h-[110px] lg:min-h-[130px] bg-slate-800 border border-slate-700 p-4 lg:p-5 rounded-xl flex flex-col">
+                        <span className="text-slate-300 font-bold text-xs lg:text-sm break-keep whitespace-nowrap self-start">예상 투자수익률 (ROI)</span>
+                        <div className="mt-auto flex flex-col items-end pt-3 w-full">
+                          <div className="text-[10px] lg:text-xs text-transparent font-medium mb-1 leading-none select-none">spacer</div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-2xl lg:text-3xl font-black text-white tracking-tighter"><CountUp value={roi} animate={isPreviewMode} decimals={1} /></span>
+                            <span className="text-[10px] lg:text-xs font-bold text-white">%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="w-full min-h-[110px] lg:min-h-[130px] bg-yellow-500/10 border-2 border-yellow-500/50 p-4 lg:p-5 rounded-xl flex flex-col">
+                        <span className="text-yellow-500 font-black text-sm lg:text-base break-keep whitespace-nowrap leading-tight self-start">투자금 전액 회수 기간</span>
+                        <div className="mt-auto flex flex-col items-end pt-3 w-full">
+                          <div className="text-[10px] lg:text-xs text-transparent font-bold mb-1 leading-none select-none">spacer</div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl lg:text-4xl font-black text-yellow-400 tracking-tighter">{totalSave > 0 && totalCost > 0 ? <CountUp value={paybackYears} animate={isPreviewMode} decimals={1} /> : '0'}</span>
+                            <span className="text-[10px] lg:text-xs font-bold text-yellow-400">년</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              
+              <div className="mt-auto pt-8 pb-8 md:pt-14 md:pb-14 text-center z-10 border-t border-slate-800 flex flex-col justify-center shrink-0">
+                <p className="text-[10px] lg:text-xs mb-1.5 text-slate-500">본 분석 리포트의 데이터는 입력된 시뮬레이션 수치를 기반으로 산출된 예상치이며, 실제 현장 상황에 따라 차이가 발생할 수 있습니다.</p>
+                <p className="text-[11px] lg:text-sm font-bold text-slate-400">주식회사 플로림 | 1660-0687</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
     </div>
   );
 }
