@@ -212,6 +212,7 @@ const ProposalPDF = ({ data }: { data: any }) => (
               <View style={pdfStyles.cardSlate}>
                 <Text style={pdfStyles.cardLabelSlate}>예상 투자수익률 (ROI)</Text>
                 <View style={pdfStyles.valContainer}>
+                  {/* 💡 이 부분 오타 수정 완료! (pdfSlate -> pdfStyles) */}
                   <Text style={{ ...pdfStyles.subSlate, color: 'transparent' }}>spacer</Text>
                   <Text>
                     <Text style={pdfStyles.valSlate}>{data.roi.toFixed(1)}</Text>
@@ -223,6 +224,7 @@ const ProposalPDF = ({ data }: { data: any }) => (
               <View style={pdfStyles.cardYellow}>
                 <Text style={pdfStyles.cardLabelYellow}>투자금 전액 회수 기간</Text>
                 <View style={pdfStyles.valContainer}>
+                  {/* 💡 이 부분 오타 수정 완료! (pdfYellow -> pdfStyles) */}
                   <Text style={{ ...pdfStyles.subYellow, color: 'transparent' }}>spacer</Text>
                   <Text>
                     <Text style={pdfStyles.valYellow}>{data.totalSave > 0 && data.totalCost > 0 ? data.paybackYears.toFixed(1) : '0'}</Text>
@@ -389,7 +391,6 @@ export default function App() {
           .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
           .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
           
-          /* 숫자 입력 창의 위아래 스피너(화살표) 숨기기 (깔끔한 UI를 위해) */
           input[type="number"]::-webkit-inner-spin-button,
           input[type="number"]::-webkit-outer-spin-button {
             -webkit-appearance: none;
@@ -401,7 +402,6 @@ export default function App() {
         `}
       </style>
 
-      {/* 플로팅 버튼 */}
       <div className="fixed bottom-5 right-5 md:bottom-8 md:right-8 z-50 flex flex-col-reverse sm:flex-row items-end gap-3 animate-fade-in">
         <button 
           onClick={handleDownloadPDF}
@@ -430,17 +430,20 @@ export default function App() {
         </button>
       </div>
 
-      {/* ===================== 상단: 대시보드 ===================== */}
       {!isPreviewMode && (
         <div className={isPdfGenerating ? "hidden" : "block"}>
           <div className="border-b border-slate-800 bg-[#050b14] py-10 text-center relative overflow-hidden">
-            <h1 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight relative z-10">스마트 에너지 솔루션 시뮬레이터</h1>
+            <div className="flex flex-col items-center gap-2 mb-2 relative z-10">
+              <svg className="w-12 h-12 md:w-14 md:h-14 text-yellow-400 mb-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.343a9.016 9.016 0 0 1-3 0m3 0c.811.121 1.631.187 2.463.187 1.353 0 2.671-.165 3.927-.487a6.017 6.017 0 0 0 1.625-1.129 6.017 6.017 0 0 0 1.129-1.625 3.016 3.016 0 0 0-.487-3.927 3.016 3.016 0 0 0-3.927-.487 1.516 1.516 0 0 0-1.625 1.129m-6.42-.487A6.017 6.017 0 0 1 7.218 10.5m-3.927-.487A3.016 3.016 0 0 1 1.666 6.086m0 0A12.06 12.06 0 0 1 1.666 1.586M6.086 1.666A12.06 12.06 0 0 1 10.586 1.666m.487 3.927a3.016 3.016 0 0 1 3.927.487" />
+              </svg>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight relative z-10">플로림 ROI 시뮬레이터</h1>
+            </div>
             <p className="text-slate-400 text-sm md:text-base font-medium relative z-10">데이터를 입력하시면 하단 리포트에 실시간 동기화됩니다.</p>
           </div>
 
           <div className="container mx-auto px-4 max-w-5xl mt-8 space-y-6 mb-10">
             <div className="bg-[#050b14] p-6 lg:p-8 rounded-3xl border border-slate-800 flex flex-col md:flex-row gap-8 shadow-xl">
-              
               <div className="flex-1 flex flex-col w-full min-h-0">
                 <h2 className="text-white font-bold mb-4 flex items-center gap-2 text-base"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>조명 구성 추가</h2>
                 <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 mb-4 shrink-0">
@@ -466,7 +469,6 @@ export default function App() {
                   </div>
                   <button onClick={handleAddLight} className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl text-base transition-colors shadow-sm">리스트에 추가하기</button>
                 </div>
-                
                 {lights.length > 0 && (
                   <div className="mt-2 border border-slate-800 rounded-xl flex-1 flex flex-col min-h-[150px] max-h-[250px] overflow-hidden bg-[#020617]/30">
                     <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
@@ -494,22 +496,17 @@ export default function App() {
                   </div>
                 )}
               </div>
-
               <div className="flex-1 border-t md:border-t-0 md:border-l border-slate-800 pt-6 md:pt-0 md:pl-8">
                 <h2 className="text-white font-bold mb-4 flex items-center gap-2 text-base"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>현장 및 제어 설정</h2>
-                
                 <div className="mb-5">
                   <label className="text-xs text-slate-400 mb-1.5 block">대상 현장명 (고객사명)</label>
                   <input type="text" value={siteName} onChange={(e)=>setSiteName(e.target.value)} placeholder="예: OOOO 물류센터, OOO빌딩 등" className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200 focus:border-slate-500 outline-none transition-colors" />
                 </div>
-
                 <div className="grid grid-cols-3 gap-3 mb-5">
                   <div><label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">일 점등(h)</label><input type="number" value={hours} onChange={(e)=>setHours(e.target.value)} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200" /></div>
                   <div><label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">연 가동(d)</label><input type="number" value={days} onChange={(e)=>setDays(e.target.value)} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200" /></div>
                   <div><label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">단가(원)</label><input type="number" value={rate} onChange={(e)=>setRate(e.target.value)} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200" /></div>
                 </div>
-
-                {/* 💡 디밍 절감율: 숫자 입력 + 슬라이더 동시 적용 */}
                 <div>
                   <div className="flex justify-between items-center text-sm mb-2">
                     <span className="text-slate-400 whitespace-nowrap">디밍 절감율</span>
@@ -540,7 +537,6 @@ export default function App() {
                 </div>
               </div>
             </div>
-
             <div className="bg-[#050b14] p-6 lg:p-8 rounded-3xl border border-slate-800 shadow-xl mb-12">
               <h2 className="text-white font-bold mb-4 flex items-center gap-2 text-base"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>협력사 견적 합산 (내부 원가)</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -567,12 +563,11 @@ export default function App() {
         </div>
       )}
 
-      {/* ===================== 하단: 시연 화면 (웹 뷰) ===================== */}
+      {/* 고객 시연 화면 (웹 뷰) */}
       <div className={`container mx-auto transition-all duration-500 ${isPreviewMode ? 'max-w-5xl mt-0 px-0' : 'max-w-5xl mt-8 px-4'} ${isPdfGenerating ? 'hidden' : 'block'}`}>
         <div className={`bg-[#050b14] shadow-2xl relative overflow-hidden border border-slate-800 ${isPreviewMode ? 'rounded-none border-x-0 border-b-0' : 'md:rounded-3xl'} flex flex-col min-h-screen`}>
           <div className="absolute top-0 left-0 w-full h-2 md:h-3 bg-slate-700 z-20"></div>
           <div className="absolute bottom-0 left-0 w-full h-2 md:h-3 bg-slate-700 z-20"></div>
-
           <div className="flex-1 flex flex-col w-full h-full relative z-10">
             <div className={`px-5 sm:px-8 lg:px-12 ${isPreviewMode ? 'pt-6 md:pt-10' : 'pt-8 md:pt-14'}`}>
               <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center pb-4 border-b border-slate-800 mb-6">
@@ -588,9 +583,7 @@ export default function App() {
               </div>
               {!isPreviewMode && <p className="text-slate-400 text-xs sm:text-sm lg:text-base font-medium break-keep mb-8">귀사의 현장 운영 데이터를 기반으로 산출된 초고효율 LED 및 IoT 스마트 제어 시스템 도입에 따른 <strong className="text-white">예상 에너지 절감액 및 투자 회수(ROI) 분석 결과</strong>입니다.</p>}
             </div>
-
             <div className={`px-5 sm:px-8 lg:px-12 flex-1 flex flex-col justify-center ${isPreviewMode ? 'pt-2 lg:pt-4' : ''}`}>
-              
               <div className="mb-6 lg:mb-8 shrink-0">
                 <h3 className="text-base lg:text-xl font-black border-l-[4px] lg:border-l-[5px] border-slate-600 text-white pl-3 lg:pl-4 mb-3 lg:mb-5 break-keep whitespace-nowrap">교체 대상 조명 내역</h3>
                 <div className="flex flex-col w-full max-h-[250px] lg:max-h-[300px] bg-slate-900 border border-slate-800 rounded-xl lg:rounded-2xl overflow-hidden">
@@ -639,19 +632,14 @@ export default function App() {
                   )}
                 </div>
               </div>
-
               <div className="flex flex-col w-full mb-8 lg:mb-12 shrink-0">
-                
                 <div className="bg-slate-900/50 border border-slate-800 px-5 py-4 rounded-xl flex flex-col sm:flex-row items-center justify-center gap-2 lg:gap-4 mb-6 lg:mb-8">
                   <span className="text-[11px] lg:text-sm font-bold text-slate-400 whitespace-nowrap">※ 시뮬레이션 적용 기준</span>
                   <span className="text-[11px] lg:text-xs text-slate-500">전력 단가 <strong className="text-slate-300">{rate || 0}원/kWh</strong> <span className="mx-1 lg:mx-2">|</span> 운영 <strong className="text-slate-300">{hours || 0}h/365d</strong> <span className="mx-1 lg:mx-2">|</span> 스마트 디밍 <strong className="text-slate-300">{dimmingRate}%</strong></span>
                 </div>
-
                 <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 w-full">
-                  
                   <div className="flex-1 flex flex-col w-full">
                     <h3 className="text-base lg:text-lg font-black border-l-[4px] lg:border-l-[5px] border-slate-600 text-white pl-3 lg:pl-4 mb-4 break-keep whitespace-nowrap">요금 절감 상세 비교</h3>
-                    
                     <div className="flex flex-col gap-3 lg:gap-4">
                       <div className="w-full min-h-[110px] lg:min-h-[130px] bg-slate-900 border border-slate-800 p-4 lg:p-5 rounded-xl flex flex-col">
                         <span className="text-slate-500 font-bold text-xs lg:text-sm break-keep whitespace-nowrap self-start">개선 전 (기존 요금)</span>
@@ -663,7 +651,6 @@ export default function App() {
                           </div>
                         </div>
                       </div>
-                      
                       <div className="w-full min-h-[110px] lg:min-h-[130px] bg-slate-800 border border-slate-700 p-4 lg:p-5 rounded-xl flex flex-col">
                         <span className="text-slate-300 font-bold text-xs lg:text-sm break-keep whitespace-nowrap self-start">도입 후 예상 요금</span>
                         <div className="mt-auto flex flex-col items-end pt-3 w-full">
@@ -674,7 +661,6 @@ export default function App() {
                           </div>
                         </div>
                       </div>
-
                       <div className="w-full min-h-[110px] lg:min-h-[130px] bg-yellow-500/10 border-2 border-yellow-500/50 p-4 lg:p-5 rounded-xl flex flex-col">
                         <span className="text-yellow-500 font-black text-sm lg:text-base break-keep whitespace-nowrap leading-tight self-start">순수 요금 절감액</span>
                         <div className="mt-auto flex flex-col items-end pt-3 w-full">
@@ -687,11 +673,9 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-
                   <div className="flex-1 flex flex-col w-full">
                     <h3 className="block lg:hidden text-base font-black border-l-[4px] border-slate-600 text-white pl-3 mb-4 break-keep whitespace-nowrap">투자 성과 요약</h3>
                     <h3 className="hidden lg:block text-lg font-black border-l-[5px] border-slate-600 text-white pl-4 mb-4 break-keep whitespace-nowrap">투자 성과 요약</h3>
-                    
                     <div className="flex flex-col gap-3 lg:gap-4">
                       <div className="w-full min-h-[110px] lg:min-h-[130px] bg-slate-900 border border-slate-800 p-4 lg:p-5 rounded-xl flex flex-col">
                         <span className="text-slate-500 font-bold text-xs lg:text-sm break-keep whitespace-nowrap self-start">총 투자 사업비</span>
@@ -703,7 +687,6 @@ export default function App() {
                           </div>
                         </div>
                       </div>
-
                       <div className="w-full min-h-[110px] lg:min-h-[130px] bg-slate-800 border border-slate-700 p-4 lg:p-5 rounded-xl flex flex-col">
                         <span className="text-slate-300 font-bold text-xs lg:text-sm break-keep whitespace-nowrap self-start">예상 투자수익률 (ROI)</span>
                         <div className="mt-auto flex flex-col items-end pt-3 w-full">
@@ -714,7 +697,6 @@ export default function App() {
                           </div>
                         </div>
                       </div>
-
                       <div className="w-full min-h-[110px] lg:min-h-[130px] bg-yellow-500/10 border-2 border-yellow-500/50 p-4 lg:p-5 rounded-xl flex flex-col">
                         <span className="text-yellow-500 font-black text-sm lg:text-base break-keep whitespace-nowrap leading-tight self-start">투자금 전액 회수 기간</span>
                         <div className="mt-auto flex flex-col items-end pt-3 w-full">
@@ -727,10 +709,8 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-
                 </div>
               </div>
-              
               <div className="mt-auto pt-8 pb-8 md:pt-14 md:pb-14 text-center z-10 border-t border-slate-800 flex flex-col justify-center shrink-0">
                 <p className="text-[10px] lg:text-xs mb-1.5 text-slate-500">본 분석 리포트의 데이터는 입력된 시뮬레이션 수치를 기반으로 산출된 예상치이며, 실제 현장 상황에 따라 차이가 발생할 수 있습니다.</p>
                 <p className="text-[11px] lg:text-sm font-bold text-slate-400">주식회사 플로림 | 1660-0687</p>
