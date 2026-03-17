@@ -281,7 +281,7 @@ export default function App() {
   const [hours, setHours] = useState<number | string>(11);
   const [days, setDays] = useState<number | string>(365);
   const [rate, setRate] = useState<number | string>(145);
-  const [dimmingRate, setDimmingRate] = useState(40); 
+  const [dimmingRate, setDimmingRate] = useState<number>(40); 
 
   const [quoteA, setQuoteA] = useState('');
   const [quoteB, setQuoteB] = useState('');
@@ -388,6 +388,16 @@ export default function App() {
           .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
           .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
           .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+          
+          /* 숫자 입력 창의 위아래 스피너(화살표) 숨기기 (깔끔한 UI를 위해) */
+          input[type="number"]::-webkit-inner-spin-button,
+          input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+          }
+          input[type="number"] {
+            -moz-appearance: textfield;
+          }
         `}
       </style>
 
@@ -498,9 +508,35 @@ export default function App() {
                   <div><label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">연 가동(d)</label><input type="number" value={days} onChange={(e)=>setDays(e.target.value)} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200" /></div>
                   <div><label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">단가(원)</label><input type="number" value={rate} onChange={(e)=>setRate(e.target.value)} className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200" /></div>
                 </div>
+
+                {/* 💡 디밍 절감율: 숫자 입력 + 슬라이더 동시 적용 */}
                 <div>
-                  <div className="flex justify-between text-sm mb-2"><span className="text-slate-400 whitespace-nowrap">디밍 절감률</span><span className="text-slate-200 font-bold">{dimmingRate}%</span></div>
-                  <input type="range" min="0" max="100" step="1" value={dimmingRate} onChange={(e) => setDimmingRate(Number(e.target.value))} className="w-full accent-slate-500 h-2 bg-[#020617] rounded-lg cursor-pointer" />
+                  <div className="flex justify-between items-center text-sm mb-2">
+                    <span className="text-slate-400 whitespace-nowrap">디밍 절감율</span>
+                    <div className="flex items-center gap-1.5">
+                      <input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        value={dimmingRate} 
+                        onChange={(e) => {
+                          let val = parseInt(e.target.value, 10);
+                          if (isNaN(val)) val = 0;
+                          if (val > 100) val = 100;
+                          if (val < 0) val = 0;
+                          setDimmingRate(val);
+                        }} 
+                        className="w-16 bg-[#050b14] border border-slate-700 rounded-lg px-2 py-1 text-right text-slate-200 font-bold focus:border-slate-500 outline-none transition-colors" 
+                      />
+                      <span className="text-slate-200 font-bold">%</span>
+                    </div>
+                  </div>
+                  <input 
+                    type="range" min="0" max="100" step="1" 
+                    value={dimmingRate} 
+                    onChange={(e) => setDimmingRate(Number(e.target.value))} 
+                    className="w-full accent-slate-500 h-2 bg-[#020617] rounded-lg cursor-pointer mt-2" 
+                  />
                 </div>
               </div>
             </div>
@@ -557,7 +593,6 @@ export default function App() {
               
               <div className="mb-6 lg:mb-8 shrink-0">
                 <h3 className="text-base lg:text-xl font-black border-l-[4px] lg:border-l-[5px] border-slate-600 text-white pl-3 lg:pl-4 mb-3 lg:mb-5 break-keep whitespace-nowrap">교체 대상 조명 내역</h3>
-                {/* 💡 CSS 복구: absolute 제거 후 flex flex-col 적용 */}
                 <div className="flex flex-col w-full max-h-[250px] lg:max-h-[300px] bg-slate-900 border border-slate-800 rounded-xl lg:rounded-2xl overflow-hidden">
                   <div className="overflow-y-auto custom-scrollbar">
                     <table className="w-full table-fixed text-[11px] lg:text-sm text-center">
