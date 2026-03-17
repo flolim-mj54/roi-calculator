@@ -212,7 +212,6 @@ const ProposalPDF = ({ data }: { data: any }) => (
               <View style={pdfStyles.cardSlate}>
                 <Text style={pdfStyles.cardLabelSlate}>예상 투자수익률 (ROI)</Text>
                 <View style={pdfStyles.valContainer}>
-                  {/* 💡 이 부분 오타 수정 완료! (pdfSlate -> pdfStyles) */}
                   <Text style={{ ...pdfStyles.subSlate, color: 'transparent' }}>spacer</Text>
                   <Text>
                     <Text style={pdfStyles.valSlate}>{data.roi.toFixed(1)}</Text>
@@ -224,7 +223,6 @@ const ProposalPDF = ({ data }: { data: any }) => (
               <View style={pdfStyles.cardYellow}>
                 <Text style={pdfStyles.cardLabelYellow}>투자금 전액 회수 기간</Text>
                 <View style={pdfStyles.valContainer}>
-                  {/* 💡 이 부분 오타 수정 완료! (pdfYellow -> pdfStyles) */}
                   <Text style={{ ...pdfStyles.subYellow, color: 'transparent' }}>spacer</Text>
                   <Text>
                     <Text style={pdfStyles.valYellow}>{data.totalSave > 0 && data.totalCost > 0 ? data.paybackYears.toFixed(1) : '0'}</Text>
@@ -433,12 +431,8 @@ export default function App() {
       {!isPreviewMode && (
         <div className={isPdfGenerating ? "hidden" : "block"}>
           <div className="border-b border-slate-800 bg-[#050b14] py-10 text-center relative overflow-hidden">
-            <div className="flex flex-col items-center gap-2 mb-2 relative z-10">
-              <svg className="w-12 h-12 md:w-14 md:h-14 text-yellow-400 mb-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.343a9.016 9.016 0 0 1-3 0m3 0c.811.121 1.631.187 2.463.187 1.353 0 2.671-.165 3.927-.487a6.017 6.017 0 0 0 1.625-1.129 6.017 6.017 0 0 0 1.129-1.625 3.016 3.016 0 0 0-.487-3.927 3.016 3.016 0 0 0-3.927-.487 1.516 1.516 0 0 0-1.625 1.129m-6.42-.487A6.017 6.017 0 0 1 7.218 10.5m-3.927-.487A3.016 3.016 0 0 1 1.666 6.086m0 0A12.06 12.06 0 0 1 1.666 1.586M6.086 1.666A12.06 12.06 0 0 1 10.586 1.666m.487 3.927a3.016 3.016 0 0 1 3.927.487" />
-              </svg>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight relative z-10">플로림 ROI 시뮬레이터</h1>
-            </div>
+            {/* 💡 롤백 완료: 큰 제목과 아이콘 없애고 원래대로 복구 */}
+            <h1 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight relative z-10">스마트 에너지 솔루션 시뮬레이터</h1>
             <p className="text-slate-400 text-sm md:text-base font-medium relative z-10">데이터를 입력하시면 하단 리포트에 실시간 동기화됩니다.</p>
           </div>
 
