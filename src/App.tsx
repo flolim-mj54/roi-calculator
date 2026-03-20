@@ -24,9 +24,12 @@ interface LightItem {
   oldW: number;
   newW: number;
   qty: number;
+  hours: number;
+  days: number;
+  rate: number;
+  dimmingRate: number;
 }
 
-// 💡 ESLint 에러 해결: PDF에 넘겨줄 데이터의 타입을 명확하게 지정합니다.
 interface PdfData {
   siteName: string;
   date: string;
@@ -39,9 +42,6 @@ interface PdfData {
   monthlyOldCost: number;
   monthlySmartCost: number;
   monthlySave: number;
-  rate: number | string;
-  hours: number | string;
-  dimmingRate: number;
   lights: LightItem[];
   totalQty: number;
 }
@@ -155,6 +155,7 @@ const pdfStyles = StyleSheet.create({
     flexDirection: "row",
     borderBottom: "1px solid #e2e8f0",
     padding: "6px 0",
+    alignItems: "center",
   },
   tableFooter: {
     flexDirection: "row",
@@ -163,13 +164,20 @@ const pdfStyles = StyleSheet.create({
     padding: "6px 0",
   },
   col1: {
-    flex: 2,
+    flex: 1.5,
     textAlign: "center",
     fontSize: 10,
     color: "#475569",
     fontWeight: "bold",
   },
   col2: {
+    flex: 1.5,
+    textAlign: "center",
+    fontSize: 10,
+    color: "#475569",
+    fontWeight: "bold",
+  },
+  colQty: {
     flex: 1,
     textAlign: "center",
     fontSize: 10,
@@ -183,8 +191,14 @@ const pdfStyles = StyleSheet.create({
     color: "#d97706",
     fontWeight: "bold",
   },
-  cell1: { flex: 2, textAlign: "center", fontSize: 10, color: "#1e293b" },
+  cell1: { flex: 1.5, textAlign: "center", fontSize: 10, color: "#1e293b" },
   cell2: {
+    flex: 1.5,
+    textAlign: "center",
+    fontSize: 9,
+    color: "#64748b",
+  },
+  cellQty: {
     flex: 1,
     textAlign: "center",
     fontSize: 10,
@@ -194,17 +208,6 @@ const pdfStyles = StyleSheet.create({
   cell3: { flex: 1.5, textAlign: "center", fontSize: 10, color: "#64748b" },
 
   giantBox: { flex: 1, flexDirection: "column" },
-
-  criteriaBoxFull: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    border: "1px solid #cbd5e1",
-    borderRadius: 8,
-    padding: "6px 0",
-    marginBottom: 8,
-  },
 
   splitRow: { flexDirection: "row", gap: 12, flex: 1 },
   col: { flex: 1, display: "flex", flexDirection: "column", gap: 6 },
@@ -320,12 +323,13 @@ const ProposalPDF = ({ data }: { data: PdfData }) => (
       </Text>
 
       <View style={{ flex: 1 }}>
-        <View>
+        <View style={{ marginBottom: 12 }}>
           <Text style={pdfStyles.sectionTitle}>교체 대상 조명 내역</Text>
           <View style={pdfStyles.tableContainer}>
             <View style={pdfStyles.tableHeader}>
               <Text style={pdfStyles.col1}>종류</Text>
-              <Text style={pdfStyles.col2}>수량</Text>
+              <Text style={pdfStyles.col2}>운영조건</Text>
+              <Text style={pdfStyles.colQty}>수량</Text>
               <Text style={pdfStyles.col3}>전력 절감</Text>
             </View>
             {data.lights.length > 0 ? (
@@ -342,7 +346,10 @@ const ProposalPDF = ({ data }: { data: PdfData }) => (
                     }}
                   >
                     <Text style={pdfStyles.cell1}>{l.type}</Text>
-                    <Text style={pdfStyles.cell2}>{formatNum(l.qty)}구</Text>
+                    <Text style={pdfStyles.cell2}>
+                      {l.hours}h / {l.days}d / {l.rate}원 / {l.dimmingRate}%
+                    </Text>
+                    <Text style={pdfStyles.cellQty}>{formatNum(l.qty)}구</Text>
                     <Text style={pdfStyles.cell3}>
                       {l.oldW}W → {l.newW}W
                     </Text>
@@ -380,7 +387,7 @@ const ProposalPDF = ({ data }: { data: PdfData }) => (
               <View style={pdfStyles.tableFooter}>
                 <Text
                   style={{
-                    flex: 2,
+                    flex: 3,
                     textAlign: "center",
                     fontSize: 10,
                     color: "#334155",
@@ -407,24 +414,6 @@ const ProposalPDF = ({ data }: { data: PdfData }) => (
         </View>
 
         <View style={pdfStyles.giantBox}>
-          <View style={pdfStyles.criteriaBoxFull}>
-            <Text
-              style={{
-                fontSize: 10,
-                color: "#475569",
-                fontWeight: "bold",
-                marginRight: 8,
-              }}
-            >
-              ※ 시뮬레이션 적용 기준
-            </Text>
-            {/* 💡 요구사항 반영: IoT 제어 시스템 절감 텍스트 변경 */}
-            <Text style={{ fontSize: 9, color: "#64748b" }}>
-              전력 단가 {data.rate || 0}원/kWh | 운영 {data.hours || 0}h/365d |
-              IoT 제어 시스템 절감 {data.dimmingRate}%
-            </Text>
-          </View>
-
           <View style={pdfStyles.splitRow}>
             <View style={pdfStyles.col}>
               <Text style={pdfStyles.sectionTitle}>요금 절감 상세 비교</Text>
@@ -537,8 +526,9 @@ const ProposalPDF = ({ data }: { data: PdfData }) => (
 
       <View style={pdfStyles.footer} fixed>
         <Text style={pdfStyles.footerNotice}>
-          본 분석 리포트의 데이터는 입력된 시뮬레이션 수치를 기반으로 산출된
-          예상치이며, 실제 현장 상황에 따라 차이가 발생할 수 있습니다.
+          본 분석 리포트의 데이터는 각 조명별로 입력된 시뮬레이션 개별
+          조건(단가, 운영시간, 디밍률)을 기반으로 산출된 예상치이며, 실제 현장
+          상황에 따라 차이가 발생할 수 있습니다.
         </Text>
         <Text style={pdfStyles.footerBrand}>주식회사 플로림 | 1660-0687</Text>
       </View>
@@ -560,7 +550,6 @@ function CountUp({
   const [count, setCount] = useState(animate ? 0 : value);
 
   useEffect(() => {
-    // 💡 ESLint 에러 해결: Effect 안에서 무조건 상태 업데이트를 하는 것을 방지
     if (!animate) return;
 
     let start: number | null = null;
@@ -593,6 +582,8 @@ export default function App() {
 
   const [siteName, setSiteName] = useState("");
   const [lights, setLights] = useState<LightItem[]>([]);
+
+  // 개별 조명 입력 폼 상태
   const [formType, setFormType] = useState(LIGHT_PRESETS[0].name);
   const [formOldW, setFormOldW] = useState<number | string>(
     LIGHT_PRESETS[0].defaultOld,
@@ -601,12 +592,12 @@ export default function App() {
     LIGHT_PRESETS[0].defaultNew,
   );
   const [formQty, setFormQty] = useState<number | string>("");
+  const [formHours, setFormHours] = useState<number | string>(11);
+  const [formDays, setFormDays] = useState<number | string>(365);
+  const [formRate, setFormRate] = useState<number | string>(145);
+  const [formDimming, setFormDimming] = useState<number>(40);
 
-  const [hours, setHours] = useState<number | string>(11);
-  const [days, setDays] = useState<number | string>(365);
-  const [rate, setRate] = useState<number | string>(145);
-  const [dimmingRate, setDimmingRate] = useState<number>(40);
-
+  // 견적 상태
   const [quoteA, setQuoteA] = useState("");
   const [quoteB, setQuoteB] = useState("");
   const [quoteC, setQuoteC] = useState("");
@@ -622,17 +613,30 @@ export default function App() {
   };
 
   const handleAddLight = () => {
-    if (!formOldW || !formNewW || !formQty)
-      return alert("W(와트)와 수량을 입력해주세요.");
+    if (
+      !formOldW ||
+      !formNewW ||
+      !formQty ||
+      !formHours ||
+      !formDays ||
+      !formRate
+    )
+      return alert("입력되지 않은 항목이 있습니다. 모든 수치를 확인해주세요.");
+
     const newItem: LightItem = {
       id: Date.now(),
       type: formType,
       oldW: Number(formOldW),
       newW: Number(formNewW),
       qty: Number(formQty),
+      hours: Number(formHours),
+      days: Number(formDays),
+      rate: Number(formRate),
+      dimmingRate: Number(formDimming),
     };
+
     setLights([...lights, newItem]);
-    setFormQty("");
+    setFormQty(""); // 수량만 비워두어 연속 입력이 편리하게 유지
   };
 
   const handleRemoveLight = (id: number) =>
@@ -652,24 +656,25 @@ export default function App() {
     }
   };
 
-  const totalOldW = lights.reduce(
-    (sum, light) => sum + light.oldW * light.qty,
-    0,
-  );
-  const totalNewW = lights.reduce(
-    (sum, light) => sum + light.newW * light.qty,
-    0,
-  );
   const totalQty = lights.reduce((sum, light) => sum + light.qty, 0);
 
-  const numHours = Number(hours) || 0;
-  const numDays = Number(days) || 0;
-  const numRate = Number(rate) || 0;
+  // reduce를 활용하여 각 조명의 조건으로 요금 개별 계산 후 합산
+  const oldCost = lights.reduce(
+    (sum, light) =>
+      sum +
+      ((light.oldW * light.qty * light.hours * light.days) / 1000) * light.rate,
+    0,
+  );
 
-  const oldEnergy = (totalOldW * numHours * numDays) / 1000;
-  const oldCost = oldEnergy * numRate;
-  const newLedEnergy = (totalNewW * numHours * numDays) / 1000;
-  const smartCost = newLedEnergy * numRate * (1 - dimmingRate / 100);
+  const smartCost = lights.reduce(
+    (sum, light) =>
+      sum +
+      ((light.newW * light.qty * light.hours * light.days) / 1000) *
+        light.rate *
+        (1 - light.dimmingRate / 100),
+    0,
+  );
+
   const totalSave = oldCost - smartCost;
 
   const monthlySave = totalSave > 0 ? totalSave / 12 : 0;
@@ -707,9 +712,6 @@ export default function App() {
         monthlyOldCost,
         monthlySmartCost,
         monthlySave,
-        rate,
-        hours,
-        dimmingRate,
         lights,
         totalQty,
       };
@@ -723,7 +725,6 @@ export default function App() {
       a.download = `${siteName || "플로림"}_스마트에너지_제안서.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      // 💡 ESLint 에러 해결: unknown 타입 사용 및 명시적 캐스팅
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
       console.error("PDF 생성 상세 에러:", errMsg);
@@ -837,23 +838,25 @@ export default function App() {
             </p>
           </div>
 
-          <div className="container mx-auto px-4 max-w-5xl mt-8 space-y-6 mb-10">
+          <div className="container mx-auto px-4 max-w-6xl mt-8 space-y-6 mb-10">
             <div className="bg-[#050b14] p-6 lg:p-8 rounded-3xl border border-slate-800 flex flex-col md:flex-row gap-8 shadow-xl">
-              <div className="flex-1 flex flex-col w-full min-h-0">
+              {/* 좌측: 조명 및 개별 조건 입력 영역 */}
+              <div className="flex-[1.5] flex flex-col w-full min-h-0">
                 <h2 className="text-white font-bold mb-4 flex items-center gap-2 text-base">
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-                  조명 구성 추가
+                  조명 구성 및 개별 조건 추가
                 </h2>
+
                 <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 mb-4 shrink-0">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                    <div className="sm:col-span-3">
-                      <label className="text-xs text-slate-400 mb-1 block">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className="col-span-2">
+                      <label className="text-[11px] text-slate-400 mb-1 block">
                         조명 종류
                       </label>
                       <select
                         value={formType}
                         onChange={handleTypeChange}
-                        className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200 focus:border-slate-500 outline-none transition-colors cursor-pointer"
+                        className="w-full bg-[#020617] border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-slate-500 outline-none transition-colors cursor-pointer"
                       >
                         {LIGHT_PRESETS.map((p, i) => (
                           <option key={i} value={p.name}>
@@ -863,77 +866,122 @@ export default function App() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">
-                        기존 조명
+                      <label className="text-[11px] text-slate-400 mb-1 block">
+                        기존 W
                       </label>
-                      <div className="relative">
+                      <input
+                        type="number"
+                        value={formOldW}
+                        onChange={(e) => setFormOldW(e.target.value)}
+                        className="w-full bg-[#020617] border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-yellow-500 font-bold mb-1 block">
+                        신규 W
+                      </label>
+                      <input
+                        type="number"
+                        value={formNewW}
+                        onChange={(e) => setFormNewW(e.target.value)}
+                        className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-sm text-yellow-400 font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-slate-400 mb-1 block">
+                        수량 (구)
+                      </label>
+                      <input
+                        type="number"
+                        value={formQty}
+                        onChange={(e) => setFormQty(e.target.value)}
+                        className="w-full bg-[#020617] border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-400 mb-1 block">
+                        일 점등 (h)
+                      </label>
+                      <input
+                        type="number"
+                        value={formHours}
+                        onChange={(e) => setFormHours(e.target.value)}
+                        className="w-full bg-[#020617] border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-400 mb-1 block">
+                        연 가동 (d)
+                      </label>
+                      <input
+                        type="number"
+                        value={formDays}
+                        onChange={(e) => setFormDays(e.target.value)}
+                        className="w-full bg-[#020617] border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-400 mb-1 block">
+                        단가 (원)
+                      </label>
+                      <input
+                        type="number"
+                        value={formRate}
+                        onChange={(e) => setFormRate(e.target.value)}
+                        className="w-full bg-[#020617] border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <label className="text-[11px] text-slate-400 mb-1 block">
+                        디밍 절감 (%)
+                      </label>
+                      <div className="flex items-center gap-2">
                         <input
-                          type="number"
-                          value={formOldW}
-                          onChange={(e) => setFormOldW(e.target.value)}
-                          className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200 pr-7"
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={formDimming}
+                          onChange={(e) =>
+                            setFormDimming(Number(e.target.value))
+                          }
+                          className="flex-1 accent-slate-500 h-1.5 bg-[#020617] rounded-lg cursor-pointer"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold pointer-events-none">
-                          W
+                        <span className="text-sm font-bold text-slate-200 w-10 text-right">
+                          {formDimming}%
                         </span>
                       </div>
                     </div>
-                    <div>
-                      <label className="text-xs text-yellow-500 font-bold mb-1 block">
-                        신규 LED
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          value={formNewW}
-                          onChange={(e) => setFormNewW(e.target.value)}
-                          className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2.5 text-base text-yellow-400 font-bold pr-7"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500/70 text-sm font-bold pointer-events-none">
-                          W
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-slate-400 mb-1 block">
-                        수량
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          value={formQty}
-                          onChange={(e) => setFormQty(e.target.value)}
-                          className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200 pr-7"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold pointer-events-none">
-                          구
-                        </span>
-                      </div>
+
+                    <div className="col-span-2 flex items-end">
+                      <button
+                        onClick={handleAddLight}
+                        className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-sm"
+                      >
+                        리스트에 추가하기
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={handleAddLight}
-                    className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl text-base transition-colors shadow-sm"
-                  >
-                    리스트에 추가하기
-                  </button>
                 </div>
+
+                {/* 추가된 조명 리스트 */}
                 {lights.length > 0 && (
-                  <div className="mt-2 border border-slate-800 rounded-xl flex-1 flex flex-col min-h-[150px] max-h-[250px] overflow-hidden bg-[#020617]/30">
+                  <div className="mt-2 border border-slate-800 rounded-xl flex-1 flex flex-col min-h-[150px] max-h-[300px] overflow-hidden bg-[#020617]/30">
                     <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
-                      <table className="w-full text-sm text-left min-w-[300px] relative">
+                      <table className="w-full text-xs sm:text-sm text-left min-w-[400px] relative">
                         <thead className="bg-[#050b14]/95 text-slate-400 sticky top-0 z-10 shadow-sm backdrop-blur-sm">
                           <tr>
-                            <th className="px-4 py-3 whitespace-nowrap font-medium text-center">
+                            <th className="px-3 py-2.5 whitespace-nowrap font-medium text-center">
                               종류
                             </th>
-                            <th className="px-4 py-3 text-center whitespace-nowrap font-medium">
-                              W변화
+                            <th className="px-3 py-2.5 text-center whitespace-nowrap font-medium">
+                              스펙(W/수량)
                             </th>
-                            <th className="px-4 py-3 text-center whitespace-nowrap font-medium">
-                              수량
+                            <th className="px-3 py-2.5 text-center whitespace-nowrap font-medium">
+                              운영조건
                             </th>
-                            <th className="px-4 py-3 text-center whitespace-nowrap font-medium">
+                            <th className="px-3 py-2.5 text-center whitespace-nowrap font-medium">
                               삭제
                             </th>
                           </tr>
@@ -944,25 +992,29 @@ export default function App() {
                               key={l.id}
                               className="hover:bg-slate-800/40 transition-colors"
                             >
-                              <td className="px-4 py-3 text-slate-300 whitespace-nowrap">
+                              <td className="px-3 py-2.5 text-slate-300 whitespace-nowrap">
                                 {l.type}
                               </td>
-                              <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
+                              <td className="px-3 py-2.5 text-slate-400 whitespace-nowrap">
                                 {l.oldW}{" "}
-                                <span className="text-yellow-500 font-bold mx-1">
-                                  →
-                                </span>{" "}
-                                <span className="text-yellow-400 font-bold">
+                                <span className="text-yellow-500">→</span>{" "}
+                                <span className="text-yellow-400">
                                   {l.newW}
                                 </span>
+                                <span className="text-white font-bold ml-1">
+                                  ({formatNum(l.qty)}구)
+                                </span>
                               </td>
-                              <td className="px-4 py-3 text-white font-bold whitespace-nowrap">
-                                {formatNum(l.qty)}구
+                              <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap text-xs">
+                                {l.hours}h/{l.days}d/{l.rate}원/
+                                <span className="text-slate-400 font-bold">
+                                  {l.dimmingRate}%
+                                </span>
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap">
+                              <td className="px-3 py-2.5 whitespace-nowrap">
                                 <button
                                   onClick={() => handleRemoveLight(l.id)}
-                                  className="text-slate-600 hover:bg-red-500/20 hover:text-red-400 p-1.5 rounded transition-colors"
+                                  className="text-slate-600 hover:bg-red-500/20 hover:text-red-400 p-1 rounded transition-colors"
                                 >
                                   ✕
                                 </button>
@@ -975,137 +1027,77 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <div className="flex-1 border-t md:border-t-0 md:border-l border-slate-800 pt-6 md:pt-0 md:pl-8">
-                <h2 className="text-white font-bold mb-4 flex items-center gap-2 text-base">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-                  현장 및 제어 설정
-                </h2>
-                <div className="mb-5">
-                  <label className="text-xs text-slate-400 mb-1.5 block">
-                    대상 현장명 (고객사명)
-                  </label>
-                  <input
-                    type="text"
-                    value={siteName}
-                    onChange={(e) => setSiteName(e.target.value)}
-                    placeholder="예: OOOO 물류센터, OOO빌딩 등"
-                    className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200 focus:border-slate-500 outline-none transition-colors"
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-3 mb-5">
-                  <div>
-                    <label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">
-                      일 점등(h)
-                    </label>
-                    <input
-                      type="number"
-                      value={hours}
-                      onChange={(e) => setHours(e.target.value)}
-                      className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">
-                      연 가동(d)
-                    </label>
-                    <input
-                      type="number"
-                      value={days}
-                      onChange={(e) => setDays(e.target.value)}
-                      className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap">
-                      단가(원)
-                    </label>
-                    <input
-                      type="number"
-                      value={rate}
-                      onChange={(e) => setRate(e.target.value)}
-                      className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200"
-                    />
-                  </div>
-                </div>
+
+              {/* 우측: 현장명 및 견적 합산 영역 (레이아웃 개선) */}
+              <div className="flex-[1] border-t md:border-t-0 md:border-l border-slate-800 pt-6 md:pt-0 md:pl-8 flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between items-center text-sm mb-2">
-                    {/* 💡 요구사항 반영: 텍스트 변경 */}
-                    <span className="text-slate-400 whitespace-nowrap">
-                      IoT 제어 시스템 절감율
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={dimmingRate}
-                        onChange={(e) => {
-                          let val = parseInt(e.target.value, 10);
-                          if (isNaN(val)) val = 0;
-                          if (val > 100) val = 100;
-                          if (val < 0) val = 0;
-                          setDimmingRate(val);
-                        }}
-                        className="w-16 bg-[#050b14] border border-slate-700 rounded-lg px-2 py-1 text-right text-slate-200 font-bold focus:border-slate-500 outline-none transition-colors"
-                      />
-                      <span className="text-slate-200 font-bold">%</span>
-                    </div>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={dimmingRate}
-                    onChange={(e) => setDimmingRate(Number(e.target.value))}
-                    className="w-full accent-slate-500 h-2 bg-[#020617] rounded-lg cursor-pointer mt-2"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="bg-[#050b14] p-6 lg:p-8 rounded-3xl border border-slate-800 shadow-xl mb-12">
-              <h2 className="text-white font-bold mb-4 flex items-center gap-2 text-base">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-                협력사 견적 합산 (내부 원가)
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                {/* 💡 요구사항 반영: 협력사 라벨명 변경 */}
-                {[
-                  { label: "LED 견적", val: quoteA, setter: setQuoteA },
-                  {
-                    label: "IoT 제어 시스템 견적",
-                    val: quoteB,
-                    setter: setQuoteB,
-                  },
-                  { label: "전기공사 견적", val: quoteC, setter: setQuoteC },
-                ].map((q, i) => (
-                  <div key={i}>
-                    <label className="text-xs text-slate-400 mb-1.5 block whitespace-nowrap pl-1">
-                      {q.label}
+                  <h2 className="text-white font-bold mb-4 flex items-center gap-2 text-base">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                    현장 및 견적 설정
+                  </h2>
+
+                  <div className="mb-6">
+                    <label className="text-xs text-slate-400 mb-1.5 block">
+                      대상 현장명 (고객사명)
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={q.val}
-                        onChange={handleNumChange(q.setter)}
-                        placeholder="0"
-                        className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-3 text-slate-200 text-right font-bold pr-8 text-base"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 text-base">
-                        원
-                      </span>
+                    <input
+                      type="text"
+                      value={siteName}
+                      onChange={(e) => setSiteName(e.target.value)}
+                      placeholder="예: OOOO 물류센터, OOO빌딩 등"
+                      className="w-full bg-[#020617] border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-200 focus:border-slate-500 outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="text-xs text-slate-400 mb-2 block">
+                      협력사 견적 (내부 원가)
+                    </label>
+                    <div className="space-y-3">
+                      {[
+                        { label: "LED 견적", val: quoteA, setter: setQuoteA },
+                        {
+                          label: "IoT 제어 시스템 견적",
+                          val: quoteB,
+                          setter: setQuoteB,
+                        },
+                        {
+                          label: "전기공사 견적",
+                          val: quoteC,
+                          setter: setQuoteC,
+                        },
+                      ].map((q, i) => (
+                        <div key={i} className="flex items-center">
+                          <span className="text-xs text-slate-500 w-32 whitespace-nowrap">
+                            {q.label}
+                          </span>
+                          <div className="relative flex-1">
+                            <input
+                              type="text"
+                              value={q.val}
+                              onChange={handleNumChange(q.setter)}
+                              placeholder="0"
+                              className="w-full bg-[#020617] border border-slate-700 rounded-lg px-3 py-2 text-slate-200 text-right font-bold pr-7 text-sm"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 text-xs">
+                              원
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-              <div className="flex justify-end items-center gap-3 pt-5 border-t border-slate-800">
-                <span className="text-slate-500 text-sm whitespace-nowrap">
-                  총 사업비 합산 :
-                </span>
-                <span className="text-2xl font-black text-yellow-400">
-                  {formatNum(totalCost)}{" "}
-                  <span className="text-xl font-bold text-slate-500">원</span>
-                </span>
+                </div>
+
+                <div className="flex justify-end items-center gap-3 pt-5 border-t border-slate-800 mt-4">
+                  <span className="text-slate-500 text-sm whitespace-nowrap">
+                    총 사업비 합산 :
+                  </span>
+                  <span className="text-2xl font-black text-yellow-400">
+                    {formatNum(totalCost)}{" "}
+                    <span className="text-xl font-bold text-slate-500">원</span>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -1114,7 +1106,7 @@ export default function App() {
 
       {/* 고객 시연 화면 (웹 뷰) */}
       <div
-        className={`container mx-auto transition-all duration-500 ${isPreviewMode ? "max-w-5xl mt-0 px-0" : "max-w-5xl mt-8 px-4"} ${isPdfGenerating ? "hidden" : "block"}`}
+        className={`container mx-auto transition-all duration-500 ${isPreviewMode ? "max-w-5xl mt-0 px-0" : "max-w-6xl mt-8 px-4"} ${isPdfGenerating ? "hidden" : "block"}`}
       >
         <div
           className={`bg-[#050b14] shadow-2xl relative overflow-hidden border border-slate-800 ${isPreviewMode ? "rounded-none border-x-0 border-b-0" : "md:rounded-3xl"} flex flex-col min-h-screen`}
@@ -1171,13 +1163,16 @@ export default function App() {
                     <table className="w-full table-fixed text-[11px] lg:text-sm text-center">
                       <thead className="bg-slate-900/95 border-b border-slate-800 text-slate-400 sticky top-0 z-10 backdrop-blur-sm">
                         <tr>
-                          <th className="w-[45%] px-3 lg:px-4 py-3 font-bold whitespace-nowrap text-center">
+                          <th className="w-[30%] px-3 lg:px-4 py-3 font-bold whitespace-nowrap text-center">
                             종류
                           </th>
-                          <th className="w-[25%] px-3 lg:px-4 py-3 font-bold whitespace-nowrap text-center">
+                          <th className="w-[30%] px-3 lg:px-4 py-3 font-bold whitespace-nowrap text-center">
+                            운영조건
+                          </th>
+                          <th className="w-[15%] px-3 lg:px-4 py-3 font-bold whitespace-nowrap text-center">
                             수량
                           </th>
-                          <th className="w-[30%] px-3 lg:px-4 py-3 font-bold text-yellow-500 whitespace-nowrap text-center">
+                          <th className="w-[25%] px-3 lg:px-4 py-3 font-bold text-yellow-500 whitespace-nowrap text-center">
                             전력 절감
                           </th>
                         </tr>
@@ -1189,13 +1184,17 @@ export default function App() {
                               key={l.id}
                               className="hover:bg-slate-800/40 transition-colors"
                             >
-                              <td className="w-[45%] px-3 lg:px-4 py-3.5 font-medium break-keep text-center text-slate-200">
+                              <td className="w-[30%] px-3 lg:px-4 py-3.5 font-medium break-keep text-center text-slate-200">
                                 {l.type}
                               </td>
-                              <td className="w-[25%] px-3 lg:px-4 py-3.5 font-bold whitespace-nowrap text-center text-slate-200">
+                              <td className="w-[30%] px-3 lg:px-4 py-3.5 whitespace-nowrap text-center text-slate-400 text-[10px] lg:text-xs font-medium">
+                                {l.hours}h / {l.days}d / {l.rate}원 /{" "}
+                                {l.dimmingRate}%
+                              </td>
+                              <td className="w-[15%] px-3 lg:px-4 py-3.5 font-bold whitespace-nowrap text-center text-slate-200">
                                 {formatNum(l.qty)}구
                               </td>
-                              <td className="w-[30%] px-3 lg:px-4 py-3.5 whitespace-nowrap text-center text-slate-500">
+                              <td className="w-[25%] px-3 lg:px-4 py-3.5 whitespace-nowrap text-center text-slate-500">
                                 <div className="flex items-center justify-center gap-1">
                                   <span>{l.oldW}W</span>
                                   <span className="text-yellow-500 font-black">
@@ -1211,7 +1210,7 @@ export default function App() {
                         ) : (
                           <tr>
                             <td
-                              colSpan={3}
+                              colSpan={4}
                               className="px-3 lg:px-4 py-8 text-center whitespace-nowrap text-slate-600"
                             >
                               등록된 조명이 없습니다.
@@ -1226,13 +1225,16 @@ export default function App() {
                       <table className="w-full table-fixed text-[11px] lg:text-sm text-center">
                         <tfoot className="font-bold text-slate-300">
                           <tr>
-                            <td className="w-[45%] px-3 lg:px-4 py-3 text-center whitespace-nowrap">
+                            <td
+                              className="w-[60%] px-3 lg:px-4 py-3 text-center whitespace-nowrap"
+                              colSpan={2}
+                            >
                               합계
                             </td>
-                            <td className="w-[25%] px-3 lg:px-4 py-3 text-center text-sm whitespace-nowrap text-yellow-400">
+                            <td className="w-[15%] px-3 lg:px-4 py-3 text-center text-sm whitespace-nowrap text-yellow-400">
                               {formatNum(totalQty)}구
                             </td>
-                            <td className="w-[30%] px-3 lg:px-4 py-3"></td>
+                            <td className="w-[25%] px-3 lg:px-4 py-3"></td>
                           </tr>
                         </tfoot>
                       </table>
@@ -1240,25 +1242,7 @@ export default function App() {
                   )}
                 </div>
               </div>
-              <div className="flex flex-col w-full mb-8 lg:mb-12 shrink-0">
-                <div className="bg-slate-900/50 border border-slate-800 px-5 py-4 rounded-xl flex flex-col sm:flex-row items-center justify-center gap-2 lg:gap-4 mb-6 lg:mb-8">
-                  <span className="text-[11px] lg:text-sm font-bold text-slate-400 whitespace-nowrap">
-                    ※ 시뮬레이션 적용 기준
-                  </span>
-                  {/* 💡 요구사항 반영: IoT 제어 시스템 절감 텍스트 변경 */}
-                  <span className="text-[11px] lg:text-xs text-slate-500">
-                    전력 단가{" "}
-                    <strong className="text-slate-300">
-                      {rate || 0}원/kWh
-                    </strong>{" "}
-                    <span className="mx-1 lg:mx-2">|</span> 운영{" "}
-                    <strong className="text-slate-300">
-                      {hours || 0}h/365d
-                    </strong>{" "}
-                    <span className="mx-1 lg:mx-2">|</span> IoT 제어 시스템 절감{" "}
-                    <strong className="text-slate-300">{dimmingRate}%</strong>
-                  </span>
-                </div>
+              <div className="flex flex-col w-full mb-8 lg:mb-12 shrink-0 mt-4">
                 <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 w-full">
                   <div className="flex-1 flex flex-col w-full">
                     <h3 className="text-base lg:text-lg font-black border-l-[4px] lg:border-l-[5px] border-slate-600 text-white pl-3 lg:pl-4 mb-4 break-keep whitespace-nowrap">
@@ -1429,9 +1413,9 @@ export default function App() {
               </div>
               <div className="mt-auto pt-8 pb-8 md:pt-14 md:pb-14 text-center z-10 border-t border-slate-800 flex flex-col justify-center shrink-0">
                 <p className="text-[10px] lg:text-xs mb-1.5 text-slate-500">
-                  본 분석 리포트의 데이터는 입력된 시뮬레이션 수치를 기반으로
-                  산출된 예상치이며, 실제 현장 상황에 따라 차이가 발생할 수
-                  있습니다.
+                  본 분석 리포트의 데이터는 각 조명별로 입력된 시뮬레이션 개별
+                  조건(단가, 운영시간, 디밍률)을 기반으로 산출된 예상치이며,
+                  실제 현장 상황에 따라 차이가 발생할 수 있습니다.
                 </p>
                 <p className="text-[11px] lg:text-sm font-bold text-slate-400">
                   주식회사 플로림 | 1660-0687
